@@ -1212,7 +1212,7 @@ body::before {
   </div>
   <div class="nav-section">
     <div class="nav-section-label">Technical Bank</div>
-    <div class="nav-item" onclick="showPage('ai-genai')"><span class="icon">🤖</span> AI / GenAI / LLM <span class="nav-count">79</span></div>
+    <div class="nav-item" onclick="showPage('ai-genai')"><span class="icon">🤖</span> AI / GenAI / LLM <span class="nav-count">138</span></div>
     <div class="nav-item" onclick="showPage('python')"><span class="icon">🐍</span> Python / Engineering <span class="nav-count">47</span></div>
     <div class="nav-item" onclick="showPage('backend')"><span class="icon">⚡</span> Backend / APIs <span class="nav-count">6</span></div>
     <div class="nav-item" onclick="showPage('databases')"><span class="icon">🗄️</span> Databases / Storage <span class="nav-count">5</span></div>
@@ -1883,6 +1883,7 @@ No two days are the same, but the core loop is always: build → evaluate → de
     </div>
     <div class="filter-bar" id="ai-filters">
       <div class="filter-btn active" onclick="filterQA('ai','all',this)">All</div>
+      <div class="filter-btn" onclick="filterQA('ai','basics',this)">⚡ Basics</div>
       <div class="filter-btn" onclick="filterQA('ai','fundamentals',this)">Fundamentals</div>
       <div class="filter-btn" onclick="filterQA('ai','rag',this)">RAG / Retrieval</div>
       <div class="filter-btn" onclick="filterQA('ai','agents',this)">Agents / LangChain</div>
@@ -1891,7 +1892,7 @@ No two days are the same, but the core loop is always: build → evaluate → de
       <div class="filter-btn" onclick="filterQA('ai','deploy',this)">Deployment / MLOps</div>
       <div class="filter-btn" onclick="filterQA('ai','eval',this)">Observability / Eval</div>
     </div>
-    <div class="q-counter" id="ai-counter">Showing all 79 questions</div>
+    <div class="q-counter" id="ai-counter">Showing all 138 questions</div>
     <div id="ai-questions"></div>
   </div>
 
@@ -2825,6 +2826,963 @@ Key message: I approach new tech by building small → understanding fully → s
 
 
 const AI_QUESTIONS = [
+// ─────────────────────────────────────────────────────────────────────────────
+// BASICS — every keyword from your resume, plain answers tied to your projects
+// ─────────────────────────────────────────────────────────────────────────────
+{cat:'basics',diff:'easy',q:'What is supervised learning vs unsupervised learning vs reinforcement learning?',
+a:`<strong>Supervised learning:</strong> Model learns from labelled examples — input X → label Y. Algorithm minimises prediction error against known ground truth. Examples: classification (spam detection), regression (price prediction), named entity recognition. <em>Your use:</em> The Pydantic validation agent in your invoice pipeline is downstream of a supervised OCR+extraction model — the Llama-3 prompting step is supervised by few-shot labelled examples.\n\n<strong>Unsupervised learning:</strong> No labels — model finds structure in data itself. Examples: clustering (k-means, DBSCAN), dimensionality reduction (PCA, UMAP), anomaly detection. <em>Your use:</em> Embedding models trained with contrastive learning (unsupervised — no human labels, only sentence pairs) power your RAG retrieval.\n\n<strong>Reinforcement learning:</strong> Agent takes actions in an environment, receives rewards, learns a policy to maximise cumulative reward. <em>Your use:</em> RLHF (Reinforcement Learning from Human Feedback) is how GPT-4 and Llama-3 were aligned — the models you use daily in production were shaped by RL against a human preference reward model.\n\n<strong>Semi-supervised:</strong> Small labelled + large unlabelled set. Common in domain fine-tuning — few labelled insurance docs + large unlabelled corpus.\n\n<strong>Key exam answer:</strong> Supervised = labelled data, optimise against ground truth. Unsupervised = find structure, no labels. RL = reward signal from environment interaction.`,
+tags:['basics','ml','supervised','unsupervised']},
+
+{cat:'basics',diff:'easy',q:'What is a Large Language Model (LLM)? How does it generate text?',
+a:`An LLM is a transformer-based neural network trained on massive text corpora to predict the next token given a context window. "Large" refers to parameter count (7B–1T+) and training data (trillions of tokens).\n\n<strong>How generation works — autoregressive decoding:</strong>\n1. Input text is tokenised (BPE/SentencePiece) into integer IDs\n2. Tokens pass through N transformer blocks (self-attention + FFN)\n3. Final hidden state → linear projection → vocabulary logits (one value per token)\n4. Softmax converts logits to probabilities\n5. A sampling strategy (greedy/top-p/temperature) picks the next token\n6. That token is appended and the process repeats until EOS or max_tokens\n\n<strong>What's "learned":</strong> The weights encode statistical relationships between tokens across the training corpus — not facts in a database, but patterns. This is why hallucination happens: the model generates plausible-looking continuations even when no factual grounding exists.\n\n<strong>Your usage:</strong> Azure OpenAI GPT-4 (LRA compliance system), Llama-3 (invoice pipeline). GPT-4 is decoder-only, ~1.8T params (estimated). Llama-3 70B is open-weight, decoder-only, runs on 2×A100s with INT4 quantisation.`,
+tags:['basics','llm','generation','fundamentals']},
+
+{cat:'basics',diff:'easy',q:'What is Generative AI? How is it different from traditional ML?',
+a:`<strong>Traditional ML:</strong> Discriminative — learns to classify, predict, or rank existing categories. Output is a label or a number. Input → predefined output space. Example: "Is this invoice fraudulent? Yes/No."\n\n<strong>Generative AI:</strong> Learns the distribution of the training data and can <em>sample new examples</em> from it. Output space is open-ended — new text, images, code, audio. Example: "Write a compliance report for this document."\n\n<strong>Key generative model families:</strong>\n• LLMs (GPT-4, Llama-3): text generation via next-token prediction\n• Diffusion models (Stable Diffusion, DALL-E): image generation by iterative denoising\n• VAEs: generate images/data via latent space sampling\n• GANs: generator vs discriminator adversarial training\n\n<strong>Why it matters for your work:</strong> Your entire Atos GenAI stack is generative — the LLMs synthesise compliance reports and extract structured data. The embedding models doing retrieval in your RAG pipeline are discriminative (BERT-class encoders). You use both working together.`,
+tags:['basics','genai','ml','fundamentals']},
+
+{cat:'basics',diff:'easy',q:'What is RAG — Retrieval-Augmented Generation? Why do we need it?',
+a:`<strong>Core problem RAG solves:</strong> LLMs have a knowledge cutoff and a fixed context window. They can't know about your private documents, recent events, or company-specific data. Asking GPT-4 directly about your DQC checklist returns a hallucinated answer.\n\n<strong>What RAG does:</strong> At query time, retrieve the most relevant chunks from your document store and inject them into the LLM prompt as context. The LLM then generates an answer grounded in those chunks — not from parametric memory.\n\n<strong>Two phases:</strong>\n<strong>Offline (indexing):</strong> Document → chunk → embed → store in vector DB\n<strong>Online (query):</strong> User query → embed → vector search → retrieve top-k chunks → inject into prompt → LLM generates answer with citations\n\n<strong>Your implementation:</strong> Your LRA system is RAG at production scale — Azure OpenAI ada-002 embeddings, Qdrant vector DB, Cohere reranker, GPT-4 synthesis, Pydantic validation. The 65% reduction in review time is the measurable business outcome of RAG working correctly.\n\n<strong>Why not just fine-tune?</strong> Fine-tuning bakes knowledge into weights — expensive, slow to update, can't cite sources. RAG keeps knowledge external — update the vector DB, not the model.`,
+tags:['basics','rag','fundamentals']},
+
+{cat:'basics',diff:'easy',q:'What is LangChain? What problems does it solve?',
+a:`LangChain is a Python/JS framework for building applications with LLMs. It provides abstractions that would otherwise require writing boilerplate for every project.\n\n<strong>Core abstractions:</strong>\n• <strong>LLMs/Chat Models:</strong> Unified interface for OpenAI, Azure, Anthropic, Hugging Face, Bedrock — swap providers with one config change\n• <strong>Prompts:</strong> PromptTemplate, ChatPromptTemplate — parameterise and version prompts\n• <strong>Chains (LCEL):</strong> Compose operations with the pipe operator: <code>prompt | llm | parser</code>\n• <strong>Retrievers:</strong> Vector store, BM25, ensemble — pluggable retrieval\n• <strong>Memory:</strong> Conversation history management\n• <strong>Tools + Agents:</strong> Give LLM access to functions (search, calculator, DB)\n• <strong>Output parsers:</strong> Parse LLM text output into structured Python objects\n\n<strong>LCEL (LangChain Expression Language):</strong> The modern compose-by-pipe approach. Lazy evaluation, streaming support, built-in batching.\n\n<strong>What LangChain does NOT do well:</strong> Complex multi-step agents with loops, conditional routing, and state — for that you use LangGraph.\n\n<strong>Your usage:</strong> LangChain for the retrieval pipeline in LRA (loaders, splitters, embeddings, vectorstore, retrieval chain). LangGraph for the multi-agent orchestration layer on top.`,
+tags:['basics','langchain','framework']},
+
+{cat:'basics',diff:'medium',q:'What is LangGraph? How is it different from LangChain?',
+a:`<strong>LangChain:</strong> Linear chains — A → B → C. Works well for simple pipelines (retrieve → prompt → generate). No loops, no conditional branching, no persistent state between calls.\n\n<strong>LangGraph:</strong> Models LLM workflows as a stateful directed graph. Nodes are Python functions (agents/steps), edges define control flow, and a shared typed <code>State</code> dict persists across nodes.\n\n<strong>Key LangGraph features that LangChain lacks:</strong>\n• <strong>Cycles:</strong> A node can route back to a previous node — retry, re-retrieval, loop until done\n• <strong>Conditional edges:</strong> Route to different nodes based on state (e.g., confidence score → human review OR auto-approve)\n• <strong>Checkpointing:</strong> Persist full graph state to Postgres/Redis — resume after failure, implement human-in-the-loop\n• <strong>Parallel fan-out:</strong> Multiple agents run concurrently, results merged\n• <strong>Subgraphs:</strong> Compose large agents from smaller graph components\n\n<strong>Your LRA multi-agent system in LangGraph:</strong>\n<code>retrieval_agent → validation_agent → synthesis_agent → orchestrator</code>\nIf validation confidence is low → orchestrator routes back to retrieval_agent with a refined query. This cycle is impossible in LangChain chains — it requires LangGraph.\n\n<strong>When to use which:</strong>\n• Simple pipeline (no loops, no branching): LangChain LCEL\n• Multi-agent, stateful, conditional, production: LangGraph`,
+tags:['basics','langchain','langgraph','agents']},
+
+{cat:'basics',diff:'medium',q:'What is the difference between LangChain and LlamaIndex?',
+a:`Both are RAG/LLM frameworks but with different design philosophies:\n\n<strong>LlamaIndex (formerly GPT Index):</strong>\n• <strong>Primary focus:</strong> Data ingestion and indexing — loading, parsing, chunking, and querying over your documents\n• Excellent connectors: 160+ data loaders (Notion, Confluence, Google Drive, S3, PDFs)\n• Rich index types: VectorStoreIndex, SummaryIndex, KnowledgeGraphIndex, TreeIndex\n• QueryEngine and RetrieverQueryEngine are first-class citizens\n• Better default chunking and metadata handling out of the box\n\n<strong>LangChain:</strong>\n• <strong>Primary focus:</strong> Chain composition and agent orchestration\n• Better for complex multi-step pipelines, tools/agents, memory management\n• More ecosystem integrations (vector stores, tools, LLMs)\n• LCEL for composable pipelines\n\n<strong>In practice:</strong> They overlap significantly and can be used together — LlamaIndex for ingestion/retrieval, LangChain/LangGraph for orchestration.\n\n<strong>Your choice:</strong> You use LangChain + LangGraph for the LRA system. LlamaIndex would be a valid alternative for the ingestion/retrieval layer — the main reason to switch would be better multi-format document connectors or if LlamaIndex's advanced index types (like KnowledgeGraphIndex) added value.`,
+tags:['basics','langchain','llamaindex','rag']},
+
+{cat:'basics',diff:'medium',q:'What is LoRA? What problem does it solve?',
+a:`<strong>The problem:</strong> Full fine-tuning a 7B+ parameter LLM requires storing and updating all gradients — a 70B model needs ~280GB VRAM just for weights, plus 3–4× for optimiser states. Impossible on most hardware.\n\n<strong>LoRA (Low-Rank Adaptation):</strong> Instead of updating the full weight matrix W (d×d), freeze W and inject two small trainable matrices: A (d×r) and B (r×d) where r << d (typically r=8 or 16). The effective update is <code>W' = W + B×A</code>.\n\n<strong>Why this works:</strong> Weight updates during fine-tuning have low intrinsic rank — most of the "learning" happens in a small subspace. Low-rank matrices capture this efficiently.\n\n<strong>Parameter savings example:</strong> 4096×4096 weight matrix = 16.7M params. LoRA r=16: A(4096×16) + B(16×4096) = 131k params — 128× fewer trainable parameters.\n\n<strong>At inference:</strong> Merge W + B×A back into one matrix — zero latency overhead vs base model.\n\n<strong>Your usage:</strong> "Experimented with LLM fine-tuning (LoRA/QLoRA) using HuggingFace Transformers to adapt models for domain-specific document Q&A." You applied this to make a base LLM better at understanding your specific document types and DQC vocabulary.`,
+tags:['basics','lora','fine-tuning','huggingface']},
+
+{cat:'basics',diff:'medium',q:'What is QLoRA? How is it different from LoRA?',
+a:`<strong>LoRA recap:</strong> Trains only low-rank adapter matrices, freezes base model weights. But the frozen base model still needs to fit in VRAM at full precision (bf16/fp16).\n\n<strong>QLoRA (Quantised LoRA — Dettmers et al., 2023):</strong> Applies LoRA on top of a 4-bit quantised base model. Key innovations:\n\n<strong>1. NF4 (NormalFloat4):</strong> A new 4-bit data type optimised for normally-distributed neural network weights. Minimises quantisation error vs standard INT4.\n\n<strong>2. Double Quantisation:</strong> Quantises the quantisation constants themselves — saves ~0.37 bits per parameter extra.\n\n<strong>3. Paged Optimisers:</strong> Uses Nvidia unified memory to page optimiser states to CPU RAM during memory spikes — prevents OOM crashes during training.\n\n<strong>Result:</strong> 65B model fine-tunable on a single 48GB GPU. Without QLoRA: needs 4×A100 (320GB VRAM).\n\n<strong>Training stack:</strong>\n<code>AutoModelForCausalLM.from_pretrained(model_id, load_in_4bit=True, bnb_config=...)</code>\n+ <code>get_peft_model(model, lora_config)</code>\n+ Unsloth for 2× speed boost\n\n<strong>Your usage:</strong> QLoRA is the practical version of what you experimented with — Llama-3 fine-tuning on domain docs without needing a multi-GPU cluster. The quantised base model handles memory; LoRA adapters handle the actual learning.`,
+tags:['basics','qlora','lora','fine-tuning','quantisation']},
+
+{cat:'basics',diff:'medium',q:'What is Hugging Face? What ecosystem components have you used?',
+a:`Hugging Face is the central open-source ML platform — model hub, datasets, and libraries for working with transformers.\n\n<strong>Core libraries:</strong>\n\n<strong>🤗 Transformers:</strong> Unified API for 200k+ pretrained models (BERT, GPT-2, Llama, T5, Whisper). <code>AutoModelForCausalLM</code>, <code>AutoTokenizer</code>, <code>pipeline()</code>. Used in your LoRA/QLoRA fine-tuning experiments.\n\n<strong>PEFT (Parameter-Efficient Fine-Tuning):</strong> Library for LoRA, QLoRA, prefix tuning, prompt tuning. <code>get_peft_model()</code>, <code>LoraConfig</code>. Direct tooling for your fine-tuning work.\n\n<strong>Datasets:</strong> 50k+ datasets with Arrow-backed streaming. Used for loading fine-tuning data efficiently.\n\n<strong>Accelerate:</strong> Abstracts multi-GPU/TPU training, mixed precision. Used under the hood by Transformers Trainer.\n\n<strong>Tokenizers:</strong> Rust-backed fast tokeniser. BPE, WordPiece, SentencePiece implementations.\n\n<strong>Model Hub:</strong> <code>from_pretrained("meta-llama/Llama-3-70b")</code> downloads weights, config, tokeniser. Your Llama-3 usage in the invoice pipeline comes from here.\n\n<strong>Inference Endpoints:</strong> Deploy any HF model as a managed API — alternative to self-hosting.\n\n<strong>Your specific usage:</strong> Transformers + PEFT for LoRA/QLoRA fine-tuning experiments on domain-specific document Q&A. Llama-3 weights downloaded from HF Hub for the invoice pipeline.`,
+tags:['basics','huggingface','transformers','peft']},
+
+{cat:'basics',diff:'easy',q:'What OCR tools have you used — pdfplumber vs pytesseract, when do you use each?',
+a:`You use two fundamentally different OCR approaches depending on the document type:\n\n<strong>pdfplumber (digital PDFs):</strong>\n• Parses the PDF's internal byte stream — extracts text that was digitally embedded when the PDF was created\n• Zero image processing — reads text directly from PDF operators\n• Preserves layout, tables, bounding boxes, font sizes\n• <code>with pdfplumber.open(f) as pdf: page.extract_text()</code> or <code>page.extract_tables()</code>\n• Fast, accurate, handles multi-column layouts\n• <strong>When to use:</strong> Any PDF created from Word, Excel, or a print-to-PDF — the vast majority of business documents\n\n<strong>pytesseract (scanned/image PDFs):</strong>\n• Wrapper around Google's Tesseract OCR engine\n• Converts PDF pages to images (pdf2image/poppler), then runs neural OCR on each image pixel\n• Required when the PDF is a scanned photo — no embedded text to extract\n• <code>pytesseract.image_to_string(Image.open(img))</code>\n• Slower, accuracy depends on scan quality (DPI, skew, contrast)\n• Pre-processing helps: deskew with <code>cv2.rotate()</code>, denoise with <code>cv2.fastNlMeansDenoising()</code>, threshold with Otsu\n• <strong>When to use:</strong> Scanned invoices, legacy documents, photographed contracts\n\n<strong>Your pipeline logic:</strong> Attempt pdfplumber first → if extracted text < threshold characters → fall back to pytesseract. This handles both document types automatically in the invoice pipeline that achieved 96% field-level accuracy.`,
+tags:['basics','ocr','pdfplumber','pytesseract','document-ai']},
+
+{cat:'basics',diff:'medium',q:'What is Amazon Bedrock? What is it used for?',
+a:`Amazon Bedrock is AWS's fully managed service for accessing foundation models (FMs) via a unified API — without managing any infrastructure.\n\n<strong>What it provides:</strong>\n• Access to models from Anthropic (Claude 3/3.5), Meta (Llama 3), Mistral, Cohere, AI21, Amazon (Titan)\n• Single API regardless of model provider — <code>bedrock.invoke_model()</code> with model-specific payload\n• No GPU provisioning, no model servers — fully serverless\n• Native AWS IAM security — no API keys floating around, just IAM roles\n• VPC endpoints for private access — data never leaves your AWS network\n• Guardrails: content filtering, PII detection, topic blocking built-in\n• Knowledge Bases: managed RAG with S3 + OpenSearch integration\n• Agents: managed multi-step agent execution\n\n<strong>vs Azure OpenAI:</strong> Bedrock = multi-model marketplace (many providers). Azure OpenAI = Microsoft-hosted OpenAI models specifically. Your LRA system uses Azure OpenAI GPT-4 — if you were AWS-first, Bedrock with Anthropic Claude would be the equivalent path.\n\n<strong>When to choose Bedrock:</strong> AWS-native infrastructure, need multi-model flexibility, strong IAM/compliance requirements, want to avoid per-provider API key management.\n\n<strong>Your AWS context:</strong> You have AWS Certified DevOps Engineer Pro — Bedrock fits naturally into your AWS infrastructure work.`,
+tags:['basics','aws','bedrock','cloud']},
+
+{cat:'basics',diff:'medium',q:'What is Amazon SageMaker? When would you use it over Bedrock?',
+a:`SageMaker is AWS's full ML platform — for building, training, and deploying your own models, not accessing pre-built foundation models.\n\n<strong>Key SageMaker components:</strong>\n• <strong>Studio:</strong> Managed JupyterLab environment with GPU instances\n• <strong>Training Jobs:</strong> Managed distributed training (single/multi-GPU/node) — handles spot instances, checkpointing, logging to S3\n• <strong>Processing Jobs:</strong> Managed data preprocessing at scale\n• <strong>Endpoints:</strong> Deploy any model as an auto-scaling REST inference endpoint\n• <strong>Pipelines:</strong> MLOps pipeline orchestration (data → train → evaluate → deploy)\n• <strong>Feature Store:</strong> Managed feature engineering and storage\n• <strong>Model Registry:</strong> Version, stage, and track models\n• <strong>Jumpstart:</strong> One-click deployment of foundation models (Llama-3, Mistral) — similar to Bedrock but you control the infrastructure\n\n<strong>Bedrock vs SageMaker:</strong>\n| | Bedrock | SageMaker |\n|---|---|---|\n| Model source | Pre-built FMs only | Any model (custom or FM) |\n| Infrastructure | Zero (serverless) | You size and manage |\n| Fine-tuning | Limited | Full (QLoRA, SFT, DPO) |\n| Cost model | Per-token | Per-hour (instance) |\n| Use case | Inference via API | Full MLOps lifecycle |\n\n<strong>When to use SageMaker:</strong> You need to fine-tune (LoRA/QLoRA), run custom training, or deploy a model you bring yourself. Your LoRA/QLoRA experiments would run on SageMaker Training Jobs.`,
+tags:['basics','aws','sagemaker','mlops','cloud']},
+
+{cat:'basics',diff:'medium',q:'What is Vertex AI? How does it compare to SageMaker and Bedrock?',
+a:`Vertex AI is Google Cloud's unified ML platform — the GCP equivalent of AWS SageMaker.\n\n<strong>Key Vertex AI components:</strong>\n• <strong>Workbench:</strong> Managed JupyterLab (equivalent to SageMaker Studio)\n• <strong>Training:</strong> Custom training jobs on GCP TPUs/GPUs — handles distributed training\n• <strong>Pipelines (Kubeflow):</strong> ML pipeline orchestration\n• <strong>Endpoints:</strong> Deploy any model for online/batch inference with auto-scaling\n• <strong>Feature Store:</strong> Managed feature engineering\n• <strong>Model Registry:</strong> Version and stage models\n• <strong>Model Garden:</strong> Access to Google's Gemini, PaLM 2, and open-source models (Llama, Mistral) — GCP's equivalent of Bedrock + SageMaker Jumpstart\n• <strong>Matching Engine:</strong> Managed approximate nearest-neighbour vector search at billion-scale (Vertex AI Vector Search)\n\n<strong>Your GCP context:</strong> You have a Google Cloud Certified Associate Cloud Engineer and used GCP extensively at Atos for the Decarbonization Project and CI/CD with Docker/K8s on GCP. Vertex AI is the natural evolution of that infrastructure work toward ML.\n\n<strong>Vertex AI vs Bedrock vs SageMaker:</strong>\n| | Vertex AI | Bedrock | SageMaker |\n|---|---|---|---|\n| Cloud | GCP | AWS | AWS |\n| Custom training | ✓ | ✗ | ✓ |\n| Foundation model access | Model Garden | ✓ | Jumpstart |\n| Vector search | Matching Engine | OpenSearch | ✗ built-in |\n\n<strong>Why Vertex AI in interviews:</strong> If they ask about GCP ML stack — Vertex AI is the answer. It unifies everything from data prep to model serving on GCP.`,
+tags:['basics','gcp','vertexai','cloud','mlops']},
+
+{cat:'basics',diff:'easy',q:'What is inference in ML? What are the key performance metrics?',
+a:`<strong>Inference:</strong> Using a trained model to make predictions on new data — the production/runtime phase, as opposed to training. When a user queries your RAG chatbot, the LLM performing generation is doing inference.\n\n<strong>Key inference performance metrics:</strong>\n\n<strong>Latency:</strong>\n• <strong>TTFT (Time to First Token):</strong> How long before the first token starts streaming — the "responsiveness" metric. Target: < 1s.\n• <strong>TPOT (Time Per Output Token):</strong> Generation speed after first token. Target: > 30 tokens/sec for acceptable streaming UX.\n• <strong>End-to-end latency:</strong> Full response time. Your LRA target: < 8s for compliance reports.\n• Measure at p50/p95/p99 — not averages (outliers matter).\n\n<strong>Throughput:</strong> Requests per second the system handles. vLLM's continuous batching dramatically improves throughput vs naive serving.\n\n<strong>Token usage (cost):</strong> Input tokens (prompt) + output tokens (generation). GPT-4 pricing is per-1k tokens — your system prompt size directly affects cost per query.\n\n<strong>Optimisation levers:</strong>\n• Quantisation (INT8/INT4) — reduce model size, faster compute\n• KV cache — avoid recomputing attention for static prefixes\n• Batching — process multiple requests together\n• Streaming — return tokens as generated (reduces perceived latency)\n• Model tiering — route simple queries to cheaper/faster models`,
+tags:['basics','inference','performance','llm']},
+
+{cat:'basics',diff:'easy',q:'What is prompt engineering? What techniques do you use?',
+a:`Prompt engineering is the practice of designing and optimising the text inputs to LLMs to reliably produce desired outputs without changing model weights.\n\n<strong>Core techniques:</strong>\n\n<strong>Zero-shot:</strong> Direct instruction with no examples. "Classify this invoice as valid or invalid." Works for GPT-4; weaker on smaller models.\n\n<strong>Few-shot:</strong> Provide labelled examples in the prompt. "Here are 3 valid invoices and 3 invalid ones. Now classify this:" — your invoice pipeline uses per-template few-shot examples, which was a key driver of the 96% accuracy.\n\n<strong>Chain-of-Thought (CoT):</strong> "Think step by step." Forces the model to reason before answering. Dramatically improves accuracy on multi-step tasks. Your LRA compliance system uses CoT inside the validation agent — check each DQC criterion one by one before emitting the final verdict.\n\n<strong>System prompt structure:</strong> Role + Context + Task + Constraints + Output format. "You are a compliance validator. Given the DQC checklist and document chunks, output a JSON with pass/fail per criterion."\n\n<strong>Structured output prompting:</strong> Instruct to output JSON matching a specific schema → parse with Pydantic. This is how your invoice pipeline generates ERP-ready JSON.\n\n<strong>Self-consistency:</strong> Generate N answers with different random seeds, take majority vote — improves factual accuracy.\n\n<strong>Negative examples:</strong> "Do NOT include any information not present in the provided context." Critical for grounding RAG responses.`,
+tags:['basics','prompting','prompt-engineering','fundamentals']},
+
+{cat:'basics',diff:'easy',q:'What is a vector database? Why is it needed for RAG?',
+a:`A vector database stores and retrieves high-dimensional float vectors efficiently, supporting approximate nearest-neighbour (ANN) search at scale — something traditional relational or document databases cannot do.\n\n<strong>Why RAG needs one:</strong> Your documents are embedded as 768–1536 dimensional float vectors. Finding the most semantically similar chunks to a query requires comparing a query vector against millions of stored vectors by cosine/dot-product similarity. A SQL database scanning every row would be prohibitively slow.\n\n<strong>How ANN works (HNSW algorithm):</strong> Hierarchical Navigable Small World graph. Vectors are organised into graph layers — top layers are sparse long-range connections, bottom layers are dense local connections. Search navigates from top to bottom, greedily finding closer neighbours. O(log N) search instead of O(N) brute force.\n\n<strong>Popular vector DBs and their positioning:</strong>\n• <strong>Qdrant:</strong> Your LRA system uses this — Rust-based, fast, rich filtering, self-hostable or cloud\n• <strong>Pinecone:</strong> Managed cloud-only, easiest ops, expensive at scale\n• <strong>Weaviate:</strong> Multi-modal (text + images), GraphQL API, hybrid search built-in\n• <strong>ChromaDB:</strong> Local development, lightweight, great for prototyping\n• <strong>pgvector:</strong> Postgres extension — good if you already have Postgres, no extra infra\n• <strong>FAISS:</strong> Facebook AI library, in-memory, not persistent — used in your NewsRAG system\n\n<strong>Beyond storage:</strong> Metadata filtering ("only retrieve from tenant_id=X"), hybrid search (vector + BM25 keyword), and multi-tenancy are key production requirements — Qdrant handles all three.`,
+tags:['basics','vectordb','rag','embeddings']},
+
+{cat:'basics',diff:'easy',q:'What are embeddings? Why do we create them?',
+a:`An embedding is a dense vector representation of data (text, image, code) in a continuous high-dimensional space, where semantically similar items are geometrically close.\n\n<strong>Why create them:</strong>\n• Machines can\'t compute "similarity" between strings directly\n• Converting text to vectors lets you use linear algebra: cosine similarity, dot products\n• Enables semantic search — finding similar meaning, not just matching keywords\n\n<strong>How text embedding works:</strong>\n1. Text → tokeniser → token IDs\n2. Token IDs → transformer encoder (BERT-class)\n3. All token representations → mean pooling → single vector (768d, 1536d, etc.)\n4. L2-normalise → unit sphere → cosine similarity == dot product\n\n<strong>What the vector captures:</strong> "dog" and "puppy" will have vectors close together. "dog" and "invoice" will be far apart. "overdue invoice" and "unpaid bill" will be close — the embedding model learned these synonyms from training data.\n\n<strong>Your usage:</strong> Azure OpenAI ada-002 (1536d) for the LRA RAG system. Every document chunk embedded → stored in Qdrant. At query time: user question embedded → same model → vector search. The embedding model must be the same for both indexing and querying.\n\n<strong>Key models:</strong>\n• <code>text-embedding-3-small</code> / <code>ada-002</code>: Azure/OpenAI managed\n• <code>BGE-M3</code>: State-of-art open-source, multilingual\n• <code>sentence-transformers/all-mpnet-base-v2</code>: Self-hosted via HuggingFace`,
+tags:['basics','embeddings','vectordb','fundamentals']},
+
+{cat:'basics',diff:'easy',q:'What is the difference between NLP, NER, and classification models?',
+a:`<strong>NLP (Natural Language Processing):</strong> The broad field — any computational processing of human language. Umbrella term covering tokenisation, POS tagging, parsing, translation, summarisation, question answering, and everything below.\n\n<strong>NER (Named Entity Recognition):</strong> A specific NLP task — identify and classify named entities in text. Types: PERSON, ORG, DATE, MONEY, LOCATION, custom (INVOICE_NUMBER, POLICY_ID).\n\nExample: "Invoice #INV-2024-001 from Siemens AG dated 15 Jan 2024 for €4,200"\n→ INV-2024-001 = INVOICE_NUMBER, Siemens AG = ORG, 15 Jan 2024 = DATE, €4,200 = MONEY\n\n<strong>Your usage:</strong> spaCy and NLTK in your stack. spaCy's <code>nlp(text).ents</code> extracts entities. Custom NER models fine-tuned for invoice fields (vendor name, amount, date). This feeds your AR Email Agent that "extracted and validated invoice data."\n\n<strong>Classification models:</strong> Given input X, output one (or multiple) labels from a fixed set. Binary: spam/not-spam. Multi-class: "route this email to Finance / HR / IT". Multi-label: one document can be multiple categories.\n\n<strong>How your AR Email Agent uses both:</strong>\n• Classification: Route email to correct processing pipeline (invoice / remittance / query)\n• NER: Extract specific fields from email body and attachments\n• Together: classify → route → NER extract → validate with Pydantic → generate ERP-ready JSON`,
+tags:['basics','nlp','ner','classification','spacy']},
+
+{cat:'basics',diff:'easy',q:'What is spaCy vs NLTK — when do you use each?',
+a:`Both are NLP libraries but serve different needs:\n\n<strong>NLTK (Natural Language Toolkit):</strong>\n• Academic, research-oriented, comprehensive\n• Tokenisation, stemming, lemmatisation, POS tagging, parsing\n• Large corpus library (WordNet, stopwords, treebanks)\n• Slower — pure Python, not optimised for production throughput\n• Best for: learning NLP, research experiments, text preprocessing pipelines that aren\'t latency-sensitive\n• Your usage: text preprocessing in data pipelines — stopword removal, tokenisation for feature engineering before embedding\n\n<strong>spaCy:</strong>\n• Industrial-strength, production-first\n• Cython-optimised — 10-50× faster than NLTK for equivalent tasks\n• Opinionated API: <code>doc = nlp(text)</code> → access <code>doc.ents</code>, <code>doc.sents</code>, <code>token.lemma_</code> all in one pass\n• Pre-trained models: <code>en_core_web_sm/md/lg/trf</code> (transformer-based)\n• Custom NER training with spaCy v3 (Config system)\n• Best for: production NLP pipelines, custom NER, entity extraction at scale\n• Your usage: NER for entity extraction in invoice/email pipelines — vendor names, dates, amounts, invoice numbers\n\n<strong>Rule of thumb:</strong> NLTK for experimentation and preprocessing; spaCy for production entity extraction and document processing.`,
+tags:['basics','spacy','nltk','nlp']},
+
+{cat:'basics',diff:'medium',q:'What is scikit-learn? Where does it fit in an AI engineer\'s stack?',
+a:`scikit-learn (sklearn) is Python\'s foundational ML library — classical ML algorithms with a consistent fit/predict API.\n\n<strong>What it provides:</strong>\n• Supervised: Linear/Logistic Regression, SVM, Decision Trees, Random Forest, Gradient Boosting (XGBoost is separate but compatible)\n• Unsupervised: KMeans, DBSCAN, PCA, t-SNE\n• Model selection: cross_validate, GridSearchCV, train_test_split\n• Preprocessing: StandardScaler, OneHotEncoder, TfidfVectorizer\n• Pipelines: chain preprocessors + model, fit on train only (prevents leakage)\n• Metrics: classification_report, roc_auc_score, mean_squared_error\n\n<strong>Where it fits in your stack:</strong>\nNot used for LLMs — scikit-learn handles classical ML (tabular data, small text classification, feature engineering). In your AI stack:\n• Pre-processing steps before embedding (TF-IDF baseline comparisons)\n• Routing classifiers: lightweight sklearn classifier to route queries to the right agent before spending tokens on an LLM call\n• Evaluation metrics: classification_report for evaluating your NER/classification pipelines\n• A/B test analysis: statistical tests on RAGAS metric deltas\n\n<strong>Your background:</strong> MSc Computer Science — you\'ll have trained classical models with sklearn. In LLM engineering, it\'s a supporting tool, not the main act.`,
+tags:['basics','sklearn','ml','fundamentals']},
+
+{cat:'basics',diff:'easy',q:'What is Streamlit? How have you used it?',
+a:`Streamlit is a Python library for building interactive data apps and ML demos with almost no frontend code — you write Python, it renders a web UI.\n\n<strong>How it works:</strong> Every user interaction (slider, button, file upload) triggers a full Python script re-run. State is managed via <code>st.session_state</code>. No HTML/CSS/JS required.\n\n<strong>Key components:</strong>\n<code>st.title() / st.write() / st.markdown()</code> — display\n<code>st.text_input() / st.selectbox() / st.file_uploader()</code> — inputs\n<code>st.chat_message() / st.chat_input()</code> — chatbot UI\n<code>st.dataframe() / st.plotly_chart()</code> — data display\n<code>st.spinner() / st.progress()</code> — async feedback\n\n<strong>Your usage:</strong> Rapid POC demos for stakeholders — your LRA compliance system and invoice pipeline most likely had a Streamlit front-end before production FastAPI. Standard pattern for GenAI engineers: Streamlit for internal demo → FastAPI + React for production.\n\n<strong>Limitations (why you move to FastAPI for prod):</strong>\n• Single-threaded re-run model doesn\'t scale to multiple users\n• No auth, no SSO, limited UI customisation\n• Not suited for streaming LLM responses at scale\n• But excellent for: quick demos, Power Apps alternative for internal tools, hackathon prototypes`,
+tags:['basics','streamlit','frontend','demo']},
+
+{cat:'basics',diff:'easy',q:'What is Power BI / Google Data Studio? How do you use visualisation in AI projects?',
+a:`<strong>Google Data Studio (Looker Studio):</strong> Google\'s BI tool — connects to BigQuery, Google Sheets, GA4, SQL DBs. Drag-drop dashboards. Your GCP background means Data Studio fits naturally for visualising cloud data.\n\n<strong>Power BI:</strong> Microsoft\'s BI platform — excellent for Azure/Office 365 environments. DAX for calculated measures, Power Query for ETL. Connects to Azure SQL, Cosmos DB, Dataflows.\n\n<strong>How visualisation fits your AI work:</strong>\n\n<strong>Operational dashboards:</strong> LLM system metrics — daily cost per query, token usage trend, p95 latency, cache hit rate, RAGAS faithfulness over time. Prometheus → Grafana (real-time). Data Studio/Power BI for executive-level weekly rollups.\n\n<strong>RAG quality monitoring:</strong> Plot retrieval score distributions, chunk hit rates, query volume by category. Spot distribution shift before it impacts users.\n\n<strong>Business outcome tracking:</strong> The 65% reduction in review time and 55% reduction in AR resolution — those are Power BI/Data Studio charts showing before/after. Stakeholders understand dashboards, not model metrics.\n\n<strong>Your Power Apps note:</strong> "LOW CODE: Power Apps (for Quick POC)" — combined with Power BI this indicates familiarity with the Microsoft Power Platform stack, relevant for enterprise AI rollouts in Microsoft-heavy environments.`,
+tags:['basics','powerbi','datastudio','visualisation']},
+
+{cat:'basics',diff:'easy',q:'What is the difference between Azure OpenAI and the standard OpenAI API?',
+a:`<strong>Standard OpenAI API (api.openai.com):</strong>\n• Hosted by OpenAI on their infrastructure\n• Your data may be used to improve OpenAI models (unless opted out)\n• Data leaves your control/cloud environment\n• Not suitable for regulated industries without a DPA\n• Simple API key authentication\n\n<strong>Azure OpenAI (your production choice):</strong>\n• OpenAI models (GPT-4, GPT-4o, ada-002, Whisper) deployed within Microsoft Azure\n• <strong>Data residency:</strong> Data stays in your chosen Azure region — no data used for training\n• <strong>Enterprise security:</strong> Azure AD auth, RBAC, Private Endpoints (no public internet)\n• <strong>Compliance:</strong> SOC 2, ISO 27001, HIPAA BAA, GDPR — your LRA compliance system requires this\n• <strong>SLA:</strong> 99.9% uptime SLA (OpenAI has no formal SLA)\n• <strong>Provisioned throughput:</strong> Dedicated capacity (PTUs) for consistent latency — critical for production\n• Managed by your Azure tenant — fits into existing cloud governance\n\n<strong>Why your LRA system uses Azure OpenAI:</strong> The DQC compliance system processes confidential training materials. Standard OpenAI would be a data governance violation for most enterprise clients. Azure OpenAI solves this — data never leaves Azure, all access is audited via Azure Monitor.\n\n<strong>Code difference:</strong> Just a different base URL and API version: <code>AzureOpenAI(azure_endpoint=..., api_version="2024-02-01")</code>`,
+tags:['basics','azure','openai','cloud','enterprise']},
+
+{cat:'basics',diff:'easy',q:'What is Docker? How do you use it in your ML/AI projects?',
+a:`Docker is a containerisation platform — packages an application with all its dependencies (Python version, libraries, system libs) into a portable image that runs identically anywhere.\n\n<strong>Why containers matter for ML:</strong>\n• "Works on my machine" eliminated — your FastAPI LLM service runs identically on your laptop, CI, and GCP/AWS\n• Dependency isolation — your LangChain 0.1 app doesn\'t conflict with another project\'s LangChain 0.3\n• Reproducibility — <code>FROM python:3.11-slim</code> locks the Python version; pinned requirements.txt locks library versions\n\n<strong>Typical ML service Dockerfile structure:</strong>\n<pre>FROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nUSER appuser          # non-root\nCMD ["uvicorn","main:app","--host","0.0.0.0","--port","8000"]</pre>\n\n<strong>Your usage:</strong> "Drove CI/CD efforts with Docker, Kubernetes, and GitHub Actions to automate testing and deploy ML models on GCP and AWS." Practically: Dockerise the FastAPI service → push to GCR/ECR → K8s deployment pulls and runs it. Also: Docker Compose for local dev (app + Qdrant + Redis all up with one command).\n\n<strong>Multi-stage builds:</strong> Separate build image (compilers, build tools) from runtime image (just the app) → smaller prod images.`,
+tags:['basics','docker','devops','deployment']},
+
+{cat:'basics',diff:'easy',q:'What is GitHub Actions? How do you use it for ML/AI CI/CD?',
+a:`GitHub Actions is a CI/CD platform built into GitHub — runs automated workflows on events (push, PR, schedule) using YAML-defined pipelines.\n\n<strong>Workflow structure:</strong>\n<pre>on: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pip install -r requirements.txt\n      - run: pytest tests/\n      - run: ruff check .\n      - run: mypy src/</pre>\n\n<strong>AI/ML-specific quality gates you\'ve implemented:</strong>\n1. Lint + typecheck (ruff, mypy) — fast failure\n2. Unit tests with mocked LLM calls (no real API spend)\n3. Integration tests against real endpoints\n4. RAGAS evaluation on golden dataset — fail pipeline if faithfulness < threshold\n5. Docker build + push to GCR/ECR\n6. K8s rolling deploy (kubectl apply via kubeconfig secret)\n\n<strong>Your usage:</strong> "Led continuous integration efforts, implementing GitHub Actions, Docker, and Kubernetes across GCP." Your Terraform CI/CD work (Terraform Cloud → GitHub Actions S3 backend migration) is also GitHub Actions.\n\n<strong>Key security practices:</strong> Secrets stored in GitHub Secrets (never in code). OIDC for keyless AWS/GCP auth (no long-lived credentials in Actions). Fine-grained PATs for self-hosted runners — you\'ve implemented this directly.`,
+tags:['basics','github-actions','cicd','devops']},
+
+{cat:'basics',diff:'easy',q:'What is the difference between GCP, AWS, and Azure — which have you used and for what?',
+a:`All three are hyperscale cloud platforms offering compute, storage, networking, and managed services. You have hands-on experience with all three:\n\n<strong>GCP (Google Cloud Platform):</strong>\n• <strong>Your cert:</strong> Associate Cloud Engineer (ZVW1QW)\n• <strong>Your usage:</strong> Decarbonization Project (Java Spring Boot + GCP services), Docker/K8s on GCP, CI/CD pipelines, GCP monitoring\n• <strong>GCP strengths:</strong> BigQuery (analytics), Vertex AI (ML), GKE (managed K8s), Pub/Sub (event streaming), best for data-intensive ML workloads\n\n<strong>AWS:</strong>\n• <strong>Your cert:</strong> AWS Certified DevOps Engineer Professional (2025)\n• <strong>Your usage:</strong> Terraform infrastructure, GitHub Actions CI/CD, S3 backend, Datadog monitoring, AKS (Azure K8s — wait, that\'s Azure; yours is EKS on AWS)\n• <strong>AWS strengths:</strong> Largest ecosystem, SageMaker for ML, Bedrock for FM access, widest enterprise adoption\n\n<strong>Azure:</strong>\n• <strong>Your usage:</strong> Azure OpenAI GPT-4 for LRA system (GPT-4, ada-002), SharePoint integration, Azure Monitor\n• <strong>Azure strengths:</strong> Microsoft ecosystem (Azure OpenAI, Teams, SharePoint, AD), strong in enterprises with Microsoft stack\n\n<strong>Interview frame:</strong> GCP for infrastructure/data engineering background, Azure for enterprise AI (OpenAI models), AWS for DevOps/IaC/MLOps. Multi-cloud is a feature, not a gap.`,
+tags:['basics','gcp','aws','azure','cloud']},
+
+// ── GROUP A: OCR Pipeline — "prove you built it" ─────────────────────────────
+
+{cat:'basics',diff:'medium',q:'Walk through your OCR routing logic — how did you decide between pdfplumber and pytesseract?',
+a:`<strong>General — how OCR routing works:</strong>
+PDFs come in two fundamentally different types. <strong>Native/digital PDFs</strong> have text embedded directly in the file as PDF operators — no image processing needed, you can extract text directly from the byte stream. <strong>Scanned/image PDFs</strong> are just photographs of paper — no embedded text at all, every page is a raster image that requires OCR.
+
+The routing decision is made before any extraction happens:
+<pre>def get_pdf_type(path):
+    with pdfplumber.open(path) as pdf:
+        text = pdf.pages[0].extract_text() or ""
+        # If less than ~50 chars extracted, it's likely scanned
+        return "native" if len(text.strip()) > 50 else "scanned"</pre>
+
+<strong>pdfplumber path (native):</strong> Direct text extraction — fast, accurate, preserves layout and tables. Zero image processing.
+<strong>pytesseract path (scanned):</strong> Convert page to image (pdf2image) → pre-process with OpenCV → run Tesseract OCR engine → get text.
+
+<strong>In my AR Email Agent:</strong>
+I implemented exactly this two-path router for the invoice pipeline. Native PDFs (invoices from accounting software, emailed from ERP systems) went through pdfplumber — instant, 99%+ accuracy on those. Scanned invoices (photographed receipts, faxed documents, legacy paper invoices) went through pytesseract with a three-stage OpenCV pre-processing pipeline. The routing decision was based on character yield from pdfplumber's first attempt — below a threshold it automatically fell back to pytesseract. This single decision was the biggest single jump in accuracy: from a flat 72% baseline to 81% just by routing correctly, because pdfplumber's native extraction is essentially perfect for digital PDFs.`,
+tags:['basics','ocr','pdfplumber','pytesseract','pipeline']},
+
+{cat:'basics',diff:'medium',q:'What did OpenCV do in your OCR pipeline — what are the three pre-processing steps and why each one?',
+a:`<strong>General — why image pre-processing matters for OCR:</strong>
+Tesseract (and all OCR engines) were trained on clean, straight, high-contrast document images. Real-world scanned invoices have three common problems that kill accuracy: rotation/skew, low contrast/poor lighting, and noise. Each OpenCV step targets one problem.
+
+<strong>Step 1 — Deskewing (rotation correction):</strong>
+Scanned paper is never perfectly straight. Even 2–3° of skew causes Tesseract to mis-segment text lines. Fix: detect the dominant angle using the Hough line transform (<code>cv2.HoughLinesP</code>), compute median angle, rotate the image to correct it (<code>cv2.warpAffine</code>). Result: text lines are horizontal, Tesseract can segment them correctly.
+
+<strong>Step 2 — Adaptive thresholding (binarisation):</strong>
+Converts a grey/colour image to pure black-and-white. Simple global thresholding fails when lighting is uneven across the scan (shadow in corner, lighter edges). Adaptive thresholding (<code>cv2.adaptiveThreshold</code>) computes a local threshold for each small region — handles uneven illumination. Result: clean black text on white background regardless of lighting variation.
+
+<strong>Step 3 — CLAHE (Contrast Limited Adaptive Histogram Equalisation):</strong>
+Applied before thresholding. CLAHE enhances local contrast without over-amplifying noise — unlike standard histogram equalisation which can blow out already-bright regions. Particularly useful for faded, low-quality scans where ink has faded.
+
+<strong>In my pipeline:</strong>
+All three applied in sequence before every pytesseract call: deskew → CLAHE → adaptive threshold. Adding these three steps took the scanned invoice accuracy from 72% (raw pytesseract) to 81%. The remaining gains came from the Llama-3 LLM correction pass and Pydantic retry loop. I used <code>cv2.rotate</code>, <code>cv2.createCLAHE</code>, and <code>cv2.adaptiveThreshold</code> specifically.`,
+tags:['basics','opencv','ocr','image-processing','pipeline']},
+
+{cat:'basics',diff:'easy',q:'What is CLAHE, adaptive thresholding, and deskewing — plain explanations?',
+a:`<strong>General — three image processing concepts:</strong>
+
+<strong>Deskewing:</strong>
+Straightening a rotated image. When you scan a document and the paper is slightly tilted, the resulting image is rotated. OCR accuracy drops sharply even at small angles because OCR engines expect horizontal text lines. Deskewing detects the rotation angle (using edge detection or line detection algorithms) and rotates the image back to level.
+
+<strong>Adaptive Thresholding:</strong>
+Converting a colour or greyscale image to black and white. "Thresholding" means: pixels above a brightness value become white, below become black — creating a binary image. "Adaptive" means the threshold is calculated locally for different regions of the image, not one global value for the whole image. This handles documents where some areas are brighter (near a light source) and some are darker (shadowed corner) — a single global threshold would lose text in one of those regions.
+
+<strong>CLAHE (Contrast Limited Adaptive Histogram Equalisation):</strong>
+A technique for enhancing the contrast of an image — making faint details more visible. Standard contrast enhancement can over-amplify noise and create harsh artefacts. CLAHE limits how much contrast can be boosted in any local region ("contrast limited") and applies it to small tiles rather than the whole image ("adaptive"). Used for faded documents, watermarked paper, or low-quality scans where text is hard to distinguish from background.
+
+<strong>In my work:</strong>
+All three are OpenCV operations applied in my invoice OCR pipeline before passing images to Tesseract. Deskewing corrects rotation from imperfect scanning, CLAHE enhances faded invoices, adaptive thresholding produces the clean binary image Tesseract expects. Together they form the pre-processing stage that took raw OCR accuracy from 72% to 81% on scanned documents.`,
+tags:['basics','opencv','ocr','image-processing']},
+
+{cat:'basics',diff:'medium',q:'How did you get from 72% to 96% OCR accuracy — walk through each step?',
+a:`<strong>General — iterative accuracy improvement in document AI:</strong>
+Document extraction accuracy improvements follow a systematic pattern: establish a baseline, identify the dominant failure mode, fix it, measure, repeat. Each fix targets a different layer of the stack.
+
+<strong>My actual journey on the AR invoice pipeline:</strong>
+
+<strong>Baseline → 72%:</strong> Raw pytesseract on all PDFs regardless of type. No pre-processing. Failure modes: native PDFs run through slow OCR unnecessarily, losing embedded text precision; scanned invoices have raw Tesseract run on unprocessed images.
+
+<strong>→ 81% (+9pp): OpenCV pre-processing.</strong> Three-stage pipeline: deskew → CLAHE → adaptive threshold before every pytesseract call. Fixed image quality issues — straight text, good contrast, clean binarisation.
+
+<strong>→ 87% (+6pp): PDF type routing.</strong> Detect native vs scanned PDFs. Native PDFs → pdfplumber (direct text extraction, near-perfect accuracy). Scanned → pytesseract. This eliminated a whole class of errors — native PDF invoices were being OCR'd unnecessarily and losing table structure.
+
+<strong>→ 93% (+6pp): Llama-3 LLM correction pass.</strong> After OCR, pass the raw text through Llama-3 with a prompt: "This is OCR output from an invoice. Fix obvious OCR errors (0→O, 1→l, rn→m), extract structured fields, output JSON." The LLM corrects OCR artefacts contextually in a way rule-based cleaning cannot.
+
+<strong>→ 96% (+3pp): Pydantic schema validation with targeted retry.</strong> If any field fails Pydantic validation (wrong type, impossible date, negative amount), trigger a second targeted extraction prompt focused only on the failing field rather than re-running the whole extraction. Reduced false negatives.
+
+<strong>Remaining 4%:</strong> Flagged to human review queue — not silently passed. These are genuinely ambiguous documents (multi-page invoices with non-standard layouts) where automated extraction confidence is low.`,
+tags:['basics','ocr','pipeline','accuracy','invoice']},
+
+{cat:'basics',diff:'easy',q:'What do python-docx and openpyxl do — how did you use them in your extraction pipeline?',
+a:`<strong>General — what these libraries do:</strong>
+
+<strong>python-docx:</strong> Reads and writes Microsoft Word (.docx) files. DOCX is a ZIP archive of XML files (Open XML format). python-docx parses the XML and exposes a Python API: <code>doc.paragraphs</code> for text blocks, <code>doc.tables</code> for tables, <code>para.style.name</code> for heading detection. Lets you extract structured text while preserving some hierarchy (headings, sections, tables).
+
+<code>from docx import Document
+doc = Document("course_material.docx")
+for para in doc.paragraphs:
+    if para.style.name.startswith("Heading"):
+        # section boundary detected
+    text = para.text</code>
+
+<strong>openpyxl:</strong> Reads and writes Microsoft Excel (.xlsx) files. Similar architecture — XLSX is also Open XML. Exposes sheets, rows, cells: <code>wb = openpyxl.load_workbook(f)</code>, <code>ws = wb.active</code>, <code>ws.iter_rows()</code>. Key challenge: cells can contain formulas, merged cells span multiple columns, data starts at unpredictable rows.
+
+<strong>In my LRA system:</strong>
+The compliance system analysed learning course materials in four formats: PDF, DOCX, PPTX, XLSX. Each required a dedicated extractor. python-docx handled Word documents — course outlines, policy documents, instructional guides. Key challenge: section hierarchy (Heading 1 → Heading 2 → body text) needed to be preserved for the DQC checklist validation to work correctly (a checklist item might require a specific section to exist). openpyxl handled spreadsheet attachments — course completion tracking matrices, rubrics. Key challenge: merged cells and formula cells that return None — needed explicit handling to avoid null chunks in the vector index.
+
+All four extractors (PDF, DOCX, PPTX, XLSX) normalised their output to a standard <code>DocumentChunk</code> schema before the chunking layer — so everything downstream was format-agnostic.`,
+tags:['basics','python-docx','openpyxl','document-ai','extraction']},
+
+// ── GROUP B: RAG & Agents — "prove you built it" ─────────────────────────────
+
+{cat:'basics',diff:'medium',q:'What chunking strategy did you use — why parent-child, why 1024/256 tokens, why 15% overlap?',
+a:`<strong>General — chunking strategies in RAG:</strong>
+Chunking is how you split large documents into pieces for indexing. The choice of chunk size is a fundamental trade-off: small chunks have precise retrieval but lose context; large chunks have context but reduce retrieval precision (the relevant sentence is buried in a 2000-token chunk with lots of irrelevant content).
+
+<strong>Common strategies:</strong>
+<strong>Fixed-size chunking:</strong> Split every N tokens with M% overlap. Simple, no structure awareness. Works for dense prose.
+<strong>Semantic chunking:</strong> Split at sentence/paragraph boundaries where embedding similarity drops — chunks align with meaning shifts.
+<strong>Parent-child (hierarchical) chunking:</strong> Two index levels. Small "child" chunks are used for retrieval (precise search). When a child chunk matches, its larger "parent" chunk is returned as context (broader context for the LLM). Best of both worlds.
+
+<strong>Why I chose parent-child for the LRA system:</strong>
+The documents were 100+ page compliance PDFs with dense technical content. Small chunks (256 tokens) gave precise retrieval — finding the exact clause. But 256 tokens often cuts mid-sentence or leaves the LLM without enough context to validate a checklist item. The parent chunk (1024 tokens) contains the full paragraph/clause including surrounding context.
+
+<strong>Why 1024/256 specifically:</strong>
+256 tokens ≈ 1-2 paragraphs — specific enough for retrieval scoring to be meaningful. 1024 tokens ≈ a full document section — enough context for the validation agent to make a pass/fail decision on a checklist criterion.
+
+<strong>Why 15% overlap:</strong>
+Without overlap, a sentence that falls exactly on a chunk boundary is split — the first half in one chunk, second half in the next. Neither chunk contains the full sentence. 15% overlap (≈38 tokens at 256) ensures every sentence appears in at least one complete chunk. I discovered this mattered the hard way — LangSmith traces showed a compliance clause being split across boundaries, causing retrieval misses.`,
+tags:['basics','chunking','rag','retrieval','langsmith']},
+
+{cat:'basics',diff:'medium',q:'What is a cross-encoder reranker — how does Cohere Rerank work and where does it sit in your pipeline?',
+a:`<strong>General — bi-encoder vs cross-encoder:</strong>
+
+<strong>Bi-encoder (your embedding model):</strong> Encodes query and document <em>independently</em> into vectors. Similarity = cosine/dot product. Fast — encode once, store. But accuracy limited: the model never sees query and document together.
+
+<strong>Cross-encoder (reranker):</strong> Takes a (query, document) pair as a single input and outputs a relevance score. The model sees both simultaneously — can model interaction between query terms and document content. Much more accurate but can't be pre-computed (must run at query time for each candidate).
+
+<strong>Pipeline position:</strong>
+Cross-encoders are too slow to rank the entire corpus (no pre-computed vectors). Standard pattern:
+<code>User query
+→ Bi-encoder: retrieve top-20 candidates (fast, ANN search)
+→ Cross-encoder: rerank top-20 → return top-3 (slow but precise, only 20 pairs)
+→ LLM: generate answer from top-3 chunks</code>
+
+<strong>Cohere Rerank specifically:</strong>
+Cohere Rerank is a managed cross-encoder API — you send your query + list of documents, it returns relevance scores. No model to host. Single API call: <code>co.rerank(query=q, documents=chunks, top_n=3)</code>. Model is trained specifically for retrieval reranking.
+
+<strong>In my LRA system:</strong>
+Qdrant ANN search retrieved top-20 chunks by cosine similarity. Cohere Rerank reranked those 20 to top-3 before injecting into GPT-4. This step improved faithfulness score by ~12% on our RAGAS evaluation — the bi-encoder was occasionally returning topically related but not directly relevant chunks. The cross-encoder, seeing query+document together, filtered these out correctly. The cost is one Cohere API call per query — acceptable given the accuracy gain on a compliance validation system.`,
+tags:['basics','reranking','cohere','rag','cross-encoder']},
+
+{cat:'basics',diff:'medium',q:'What is MCP (Model Context Protocol) — how did you use it with your agents?',
+a:`<strong>General — what MCP is:</strong>
+MCP (Model Context Protocol) is an open standard introduced by Anthropic (November 2024) for connecting AI agents to external tools and data sources. Think of it as a USB standard for AI — instead of every agent framework having its own custom tool integration, MCP defines a universal protocol.
+
+<strong>Architecture:</strong>
+<strong>MCP Server:</strong> Any service that exposes capabilities — a database, an API, a file system, a search engine. Exposes three things:
+• <strong>Tools</strong> — callable functions (e.g., <code>search_documents</code>, <code>write_to_sharepoint</code>)
+• <strong>Resources</strong> — data the agent can read (e.g., current DQC checklist version)
+• <strong>Prompts</strong> — reusable prompt templates
+
+<strong>MCP Client:</strong> The agent that discovers and calls tools via JSON-RPC over stdio or SSE transport.
+
+<strong>Why it matters:</strong> Tool definitions are standardised and discoverable. Build an MCP server once for SharePoint — every agent that speaks MCP can use it. No custom integration per agent.
+
+<strong>In my LRA multi-agent system:</strong>
+My agents used MCP for external tool access. The orchestrator agent called MCP-exposed tools: the SharePoint write tool (Graph API wrapped as MCP tool), the document retrieval tool (Qdrant search exposed via MCP), and the DQC checklist fetch tool. Each agent node in LangGraph called the appropriate MCP tool rather than having hardcoded API calls. This meant I could update the SharePoint integration in the MCP server without touching any agent code — the agents discovered capabilities dynamically at startup via <code>tools/list</code>.`,
+tags:['basics','mcp','agents','langgraph','protocol']},
+
+{cat:'basics',diff:'medium',q:'How does Pydantic enforce schema in an LLM pipeline — what happens on validation failure?',
+a:`<strong>General — what Pydantic does:</strong>
+Pydantic is a Python data validation library using type annotations. You define a class inheriting from <code>BaseModel</code> with typed fields — Pydantic validates that any data assigned matches those types, raises clear errors if not, and serialises to/from JSON.
+
+<code>from pydantic import BaseModel, validator
+from typing import Optional
+from datetime import date
+
+class InvoiceExtract(BaseModel):
+    vendor_name: str
+    invoice_number: str
+    invoice_date: date          # validates string → date automatically
+    amount: float               # validates "£4,200" fails, must be numeric
+    currency: str
+    line_items: list[dict]
+
+    @validator('amount')
+    def amount_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError('amount must be positive')
+        return v</code>
+
+<strong>JSON mode:</strong> OpenAI/Azure API feature where you add <code>response_format={"type": "json_object"}</code> to the API call — the LLM is constrained to output valid JSON. Combined with a schema in the system prompt, you get structured output. <code>with_structured_output(InvoiceExtract)</code> in LangChain does this automatically.
+
+<strong>On validation failure — my retry pattern:</strong>
+<code>for attempt in range(3):
+    try:
+        result = llm.with_structured_output(InvoiceExtract).invoke(prompt)
+        return result  # valid
+    except ValidationError as e:
+        # Targeted retry: tell LLM exactly which field failed
+        failed_fields = [err['loc'][0] for err in e.errors()]
+        prompt = build_retry_prompt(ocr_text, failed_fields)
+# After 3 attempts → route to human review queue</code>
+
+<strong>In my invoice pipeline:</strong>
+This pattern was the final step from 93% to 96%. Instead of failing the whole extraction on a bad field (e.g., amount formatted as "€4.200,00" instead of 4200.00), the retry targeted just that field with a specific prompt: "The amount field failed. It must be a plain float. Re-extract only the total amount." Reduced unnecessary full re-extractions.`,
+tags:['basics','pydantic','structured-output','validation','llm']},
+
+{cat:'basics',diff:'medium',q:'What is LangSmith — what did you actually monitor with it?',
+a:`<strong>General — what LangSmith is:</strong>
+LangSmith is LangChain's observability platform for LLM applications. It gives you full trace visibility into every LLM call, chain execution, and agent step — something that's impossible with standard application logging because LLM pipelines have complex nested structures.
+
+<strong>What it captures per trace:</strong>
+• Every LLM call: exact prompt sent, response received, token counts, latency, model used, cost
+• Chain execution: which nodes ran, in what order, how long each took
+• Agent steps: tool calls made, tool outputs received, routing decisions
+• Errors: where in the chain the error occurred, with full context
+
+<strong>Key LangSmith features:</strong>
+• <strong>Datasets + Evaluations:</strong> Store golden Q&A pairs, run automated RAGAS evaluations against them on every deploy
+• <strong>Annotation queues:</strong> Route low-confidence outputs to human reviewers directly from LangSmith
+• <strong>Comparisons:</strong> A/B test two prompt versions on the same dataset
+• <strong>Playground:</strong> Replay any production trace with modified prompts
+
+<strong>What I monitored in the LRA system:</strong>
+• P95 latency per agent node — found the synthesis agent was the bottleneck (GPT-4 call with long context)
+• Token usage per request — cost tracking, alert when prompts grew unexpectedly (context accumulation bug)
+• Retrieval scores — cosine similarity distribution for retrieved chunks; drop indicated embedding drift
+• Faithfulness on 10% sample (LangSmith + RAGAS) — automated quality gate
+• The chunking boundary bug: I found it by filtering LangSmith traces for low-faithfulness outputs and inspecting the exact chunks retrieved — saw that the relevant clause was split across two consecutive chunks, neither scoring high enough alone`,
+tags:['basics','langsmith','observability','monitoring','rag']},
+
+{cat:'basics',diff:'easy',q:'What is Microsoft Graph API — how did you authenticate and integrate with SharePoint?',
+a:`<strong>General — what Microsoft Graph API is:</strong>
+Microsoft Graph API is the unified REST API for all Microsoft 365 services — SharePoint, Teams, Outlook, OneDrive, Calendar, Azure AD. Instead of separate APIs for each service, Graph provides one endpoint (<code>https://graph.microsoft.com/v1.0</code>) with consistent authentication and consistent response format.
+
+<strong>Authentication — OAuth 2.0 / Azure AD app registration:</strong>
+<code># Register an Azure AD application → get client_id + client_secret
+# Grant it SharePoint application permissions
+# Auth flow (client credentials — no user, service-to-service):
+import msal
+app = msal.ConfidentialClientApplication(
+    client_id, client_credential=client_secret,
+    authority=f"https://login.microsoftonline.com/{tenant_id}"
+)
+token = app.acquire_token_for_client(
+    scopes=["https://graph.microsoft.com/.default"]
+)
+headers = {"Authorization": f"Bearer {token['access_token']}"}</code>
+
+<strong>Writing to SharePoint:</strong>
+<code># Upload a compliance report file to a SharePoint document library
+requests.put(
+    f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives/{drive_id}"
+    f"/root:/{filename}:/content",
+    headers=headers,
+    data=report_bytes
+)</code>
+
+<strong>Reading emails + attachments (AR agent):</strong>
+<code># Poll shared mailbox for new emails with invoice attachments
+requests.get(
+    "https://graph.microsoft.com/v1.0/users/{mailbox}/messages"
+    "?$filter=isRead eq false&$expand=attachments",
+    headers=headers
+)</code>
+
+<strong>In my projects:</strong>
+Two separate Graph integrations: (1) LRA system writes compliance reports to a SharePoint document library after the multi-agent validation completes. (2) AR Email Agent polls a shared AR mailbox for new emails, downloads invoice attachments, and marks emails as read after processing. Both used the same MSAL client credentials flow with Azure AD app registration.`,
+tags:['basics','microsoft-graph','sharepoint','azure','api']},
+
+{cat:'basics',diff:'easy',q:'What is JSON mode in an LLM API — and how do you use it?',
+a:`<strong>General — what JSON mode is:</strong>
+JSON mode is an API parameter that constrains the LLM to only output valid JSON — it will not output prose, explanations, or markdown code blocks. The model is forced to produce a syntactically valid JSON object every time.
+
+<strong>OpenAI / Azure OpenAI:</strong>
+<code>response = client.chat.completions.create(
+    model="gpt-4o",
+    response_format={"type": "json_object"},  # JSON mode
+    messages=[
+        {"role": "system", "content": "Extract invoice fields. Output JSON only."},
+        {"role": "user", "content": ocr_text}
+    ]
+)</code>
+
+<strong>Important constraints:</strong>
+• JSON mode guarantees valid JSON syntax — it does NOT guarantee your specific schema
+• You must instruct the model what fields to output in the system prompt
+• The model can still hallucinate field values — JSON mode only fixes structure, not accuracy
+• For schema enforcement, combine with Pydantic validation after parsing
+
+<strong>LangChain's <code>with_structured_output()</code>:</strong>
+Higher-level abstraction that combines JSON mode + Pydantic in one call:
+<code>chain = llm.with_structured_output(InvoiceExtract)
+result: InvoiceExtract = chain.invoke(ocr_text)
+# result is already a validated Pydantic object, not raw JSON</code>
+
+<strong>In my pipeline:</strong>
+I used <code>with_structured_output(InvoiceExtract)</code> in LangChain for the invoice extraction step, and JSON mode directly for the LRA compliance validation agent where the output schema was more complex (nested checklist results per DQC criterion). JSON mode eliminated "here is the extracted data:" preamble that broke JSON parsing, and Pydantic caught any schema violations that JSON mode alone wouldn't catch.`,
+tags:['basics','json-mode','pydantic','structured-output','llm']},
+
+// ── GROUP C: Fine-tuning — "prove you built it" ───────────────────────────────
+
+{cat:'basics',diff:'medium',q:'Walk through your QLoRA training config — r, alpha, target_modules — why those values?',
+a:`<strong>General — LoRA hyperparameters explained:</strong>
+
+<strong>r (rank):</strong> The rank of the low-rank decomposition matrices A (d×r) and B (r×d). Controls how many parameters are trainable. Low r (4, 8) = fewer parameters, faster training, may underfit complex tasks. High r (32, 64) = more parameters, better fit, slower. Standard starting point: r=16.
+
+<strong>alpha (scaling factor):</strong> Controls the magnitude of the LoRA update: effective_update = (alpha/r) × B×A. Typically set to alpha = 2×r (so alpha=32 when r=16) — this keeps the scaling factor at 2.0, which empirically works well. Some practitioners set alpha=r (scaling=1.0) for more conservative updates.
+
+<strong>target_modules:</strong> Which weight matrices in the transformer to apply LoRA to. Options: q_proj, k_proj, v_proj, o_proj (attention), gate_proj, up_proj, down_proj (FFN). Applying to all = more parameters but better coverage. Minimum effective: q_proj + v_proj (query and value projections in attention — these have the most impact on output style/domain).
+
+<strong>My QLoRA config on the domain Q&A fine-tuning project:</strong>
+<code>from peft import LoraConfig, get_peft_model
+
+lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],  # attention only
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=True
+)
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3-7b-hf",
+    quantization_config=bnb_config
+)</code>
+
+<strong>Why q_proj + v_proj only:</strong> Keeps trainable parameter count low (~0.5% of model params) — on an A100 80GB with QLoRA base model, this fit comfortably with batch_size=4. Adding FFN layers (gate/up/down) was tested but didn't improve domain Q&A quality enough to justify the extra memory.`,
+tags:['basics','qlora','lora','fine-tuning','huggingface','peft']},
+
+{cat:'basics',diff:'easy',q:'What is bitsandbytes — what did it do in your QLoRA training?',
+a:`<strong>General — what bitsandbytes is:</strong>
+bitsandbytes is a Python library (by Tim Dettmers, also the QLoRA paper author) that enables low-bit quantisation for PyTorch models — specifically INT8 and NF4 (4-bit NormalFloat). It works by replacing standard PyTorch Linear layers with quantised equivalents that use less memory and have hardware-accelerated compute paths on NVIDIA GPUs.
+
+<strong>What it does in QLoRA specifically:</strong>
+<code>from transformers import BitsAndBytesConfig
+import torch
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,                        # load base model in 4-bit NF4
+    bnb_4bit_quant_type="nf4",               # NormalFloat4 quantisation
+    bnb_4bit_compute_dtype=torch.bfloat16,   # upcast to bf16 for forward pass
+    bnb_4bit_use_double_quant=True           # quantise the quantisation constants too
+)</code>
+
+<strong>NF4 (NormalFloat4):</strong> A special 4-bit data type optimised for the normal distribution of neural network weights — minimises quantisation error vs standard INT4. Values are stored in 4 bits but are dequantised to bf16 during the forward/backward pass.
+
+<strong>Memory impact:</strong> A 7B parameter model at full bf16 = ~14GB. With NF4 quantisation = ~4GB. This is how QLoRA enables fine-tuning a 7B model on a single consumer GPU (24GB RTX 3090) or an A100.
+
+<strong>In my training:</strong>
+I used bitsandbytes to load Llama-3 7B in 4-bit NF4 on a single A100 (80GB). Without quantisation, Llama-3 7B bf16 + LoRA adapters + optimiser states would need ~60GB+ VRAM — tight even on an A100. With bitsandbytes NF4 the base model used ~4GB, leaving ample room for the LoRA adapters, activations, and AdamW optimiser states. Training ran for ~6 hours on 3000 synthetic domain Q&A pairs.`,
+tags:['basics','bitsandbytes','qlora','quantisation','fine-tuning']},
+
+{cat:'basics',diff:'medium',q:'How did you generate 3000 synthetic training examples — what was the process?',
+a:`<strong>General — synthetic data generation for fine-tuning:</strong>
+When fine-tuning an LLM for a domain-specific task, you need (question, answer) pairs where the answers reflect the domain vocabulary, format, and reasoning style you want. Real labelled data is expensive to create (domain expert time). Synthetic generation uses a capable LLM (GPT-4) to create training data at scale from your actual domain documents.
+
+<strong>General pattern:</strong>
+<code>system_prompt = """You are a training data generator.
+Given a document chunk, generate 3 Q&A pairs that:
+1. Require reading the document to answer
+2. Are phrased as an examiner would ask
+3. Have detailed, accurate answers grounded in the text
+Output as JSON: [{"question": "...", "answer": "..."}]"""
+
+for chunk in document_chunks:
+    qa_pairs = gpt4.invoke(f"Document:\n{chunk}\n\nGenerate Q&A pairs.")
+    training_data.extend(qa_pairs)</code>
+
+<strong>Quality filtering:</strong> Not all synthetic pairs are good. Filter by: minimum answer length, answer must contain keywords from the chunk, question must end with "?", remove duplicates by embedding similarity.
+
+<strong>In my fine-tuning project:</strong>
+I generated 3000 Q&A pairs from the compliance document corpus (the same DQC documents from the LRA system). GPT-4 generated 3–5 Q&A pairs per chunk from ~700 document chunks. The training pairs focused on domain-specific checklist vocabulary and validation reasoning patterns that the base Llama-3 7B model consistently got wrong (it would give general answers instead of citing specific DQC criteria). After filtering (removed ~200 low-quality pairs), trained on 2800 pairs. The fine-tuned model improved checklist-specific answer quality significantly on the held-out evaluation set, though the full RAG pipeline with GPT-4 still outperformed it on complex multi-document queries.`,
+tags:['basics','synthetic-data','fine-tuning','llm','training']},
+
+{cat:'basics',diff:'easy',q:'What is early stopping in model training — when did it trigger in your fine-tuning?',
+a:`<strong>General — what early stopping is:</strong>
+Early stopping is a regularisation technique that stops training when the model's performance on a validation set stops improving — preventing overfitting (the model memorising training data rather than generalising).
+
+<strong>How it works:</strong>
+You hold out 10–20% of training data as a validation set. After each epoch (full pass through training data), evaluate loss on the validation set. If validation loss hasn't improved for N epochs (the "patience" parameter), stop training and restore the best weights.
+
+<code>from transformers import TrainingArguments, EarlyStoppingCallback
+
+training_args = TrainingArguments(
+    output_dir="./results",
+    num_train_epochs=10,          # max epochs — early stopping may stop before
+    per_device_train_batch_size=4,
+    evaluation_strategy="epoch",  # evaluate every epoch
+    save_strategy="epoch",
+    load_best_model_at_end=True,  # restore best checkpoint
+    metric_for_best_model="eval_loss",
+    greater_is_better=False
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
+)</code>
+
+<strong>In my fine-tuning run:</strong>
+I set max 10 epochs with patience=3. Training stopped at epoch 6 — validation loss plateaued at epoch 3 and began a slight uptick at epoch 5. Early stopping triggered at epoch 6, restoring the epoch 3 checkpoint. Without early stopping the model would have continued for 4 more epochs and overfit to the synthetic training data — the validation loss trajectory made this clear. Training time: ~6 hours total on a single A100 (stopped at ~3.5 hours).`,
+tags:['basics','early-stopping','fine-tuning','training','regularisation']},
+
+// ── GROUP D: Infrastructure & Deployment ─────────────────────────────────────
+
+{cat:'basics',diff:'easy',q:'What is Kubernetes — how does it differ from Docker?',
+a:`<strong>General — Docker vs Kubernetes, the key distinction:</strong>
+
+<strong>Docker:</strong> Packages an application + its dependencies into a portable container image. Runs one container (or a few with Docker Compose) on one machine. Docker solves "works on my machine" — the image is identical everywhere. <em>Single-machine concern.</em>
+
+<strong>Kubernetes (K8s):</strong> Orchestrates containers across a cluster of machines. Answers the question: "I have 10 containers to run — which machines should they run on? What happens when one crashes? How do I update them without downtime? How do I scale from 2 to 20 replicas when traffic spikes?" <em>Multi-machine, production concern.</em>
+
+<strong>Key Kubernetes concepts:</strong>
+• <strong>Pod:</strong> Smallest deployable unit — one or more containers that share networking and storage
+• <strong>Deployment:</strong> Declares desired state (3 replicas of my-api:v2) — K8s maintains it
+• <strong>Service:</strong> Stable DNS name + load balancer in front of pods (pods come and go, service IP stays)
+• <strong>Namespace:</strong> Logical isolation — dev/staging/prod in same cluster
+• <strong>HPA (Horizontal Pod Autoscaler):</strong> Automatically scales replicas based on CPU/memory/custom metrics
+• <strong>Rolling update:</strong> Replace pods one at a time — zero downtime deployment
+
+<strong>In my work:</strong>
+I deployed both the LRA FastAPI service and AR Email Agent as Kubernetes Deployments on GKE (Google Kubernetes Engine — managed K8s). Each service had a Deployment (3 replicas), a Service (ClusterIP + Ingress), resource limits, and liveness/readiness probes. Rolling updates via <code>kubectl set image deployment/lra-api</code> with <code>maxUnavailable=0</code> gave zero-downtime deploys. GitHub Actions pushed new Docker images to GCP Artifact Registry and triggered rolling updates automatically on merge to main.`,
+tags:['basics','kubernetes','docker','gke','devops']},
+
+{cat:'basics',diff:'medium',q:'How do you deploy an AI service on GCP end-to-end — Cloud Run vs GKE, when do you use each?',
+a:`<strong>General — two main paths for container workloads on GCP:</strong>
+
+<strong>Cloud Run (serverless containers):</strong>
+• Deploy a container image, GCP handles everything else — no cluster to manage
+• Scales to zero (no traffic = no cost), scales to thousands of instances automatically
+• Cold start: ~2–5 seconds for a new instance to start
+• Best for: variable/bursty traffic, stateless services, simple APIs, cost-sensitive workloads
+• Limit: no persistent state, no GPU support, max 60min request timeout
+
+<strong>GKE (Google Kubernetes Engine — managed K8s):</strong>
+• You define Deployments, Services, Ingress — GKE manages the K8s control plane
+• Always-on pods, no cold starts, full K8s feature set (StatefulSets, PVCs, HPA, GPU nodes)
+• Best for: steady traffic, stateful services, GPU workloads, complex microservices, when you need K8s features
+• More operational overhead — nodes, node pools, cluster upgrades
+
+<strong>End-to-end GKE deployment for an LLM service:</strong>
+<code>1. Build: docker build -t gcr.io/PROJECT/lra-api:SHA .
+2. Push: docker push gcr.io/PROJECT/lra-api:SHA  (→ Artifact Registry)
+3. Scan: trivy image gcr.io/PROJECT/lra-api:SHA  (in CI)
+4. Deploy: kubectl set image deployment/lra-api container=gcr.io/.../lra-api:SHA
+5. Verify: kubectl rollout status deployment/lra-api
+6. Monitor: Cloud Monitoring → latency/error dashboards</code>
+
+<strong>My choices:</strong>
+LRA compliance system → GKE: stateful (Qdrant sidecar), needs persistent volumes, steady traffic from business users. Decarbonization project → Cloud Run: event-driven (Pub/Sub triggers), variable load, Java Spring Boot service that could tolerate cold starts. AR Email Agent → GKE: needed Redis sidecar for queue management, always-on polling.`,
+tags:['basics','gcp','cloud-run','gke','deployment','kubernetes']},
+
+{cat:'basics',diff:'medium',q:'How do you deploy an AI service on AWS end-to-end — ECS vs SageMaker Endpoints vs Bedrock?',
+a:`<strong>General — three main paths for AI workloads on AWS:</strong>
+
+<strong>Amazon ECS (Elastic Container Service):</strong>
+Run Docker containers on AWS — like GKE but AWS-flavoured. Two launch types:
+• <strong>Fargate:</strong> Serverless — no EC2 instances to manage (like Cloud Run but with more control)
+• <strong>EC2:</strong> Manage your own instances — needed for GPU workloads, spot instances, custom networking
+Best for: your own FastAPI LLM service, custom pipelines, any containerised app
+
+<strong>SageMaker Endpoints:</strong>
+Managed model serving — deploy a model (from SageMaker Model Registry or S3) as an auto-scaling REST endpoint. AWS manages the instances, scaling, and health checks. Supports real-time inference and serverless inference. Best for: models you've trained in SageMaker, standard ML frameworks (sklearn, PyTorch, HuggingFace). More opinionated than ECS — works best in the SageMaker ecosystem.
+
+<strong>Bedrock:</strong>
+Access pre-built foundation models (Claude, Llama, Mistral) via API — no infrastructure at all. Per-token pricing. Best for: using existing FMs without hosting anything.
+
+<strong>End-to-end ECS Fargate deployment (my CI/CD approach):</strong>
+<code>1. Build & push: docker push AWS_ACCOUNT.dkr.ecr.REGION.amazonaws.com/lra-api:SHA
+2. Update task definition: aws ecs register-task-definition --cli-input-json task-def.json
+3. Update service: aws ecs update-service --service lra-api --task-definition lra-api:NEW_REV
+4. ECS rolls out new task definition → replaces old tasks one-by-one
+5. ALB (Application Load Balancer) in front → zero-downtime during rollout</code>
+
+<strong>My usage:</strong>
+I used AWS ECS (in the CI/CD pipeline project) for deploying a containerised AI service on AWS. Terraform managed the ECS cluster, task definitions, and IAM roles. GitHub Actions triggered the ECS service update on merge to main. SageMaker would be the choice for the QLoRA fine-tuning training jobs if run on AWS.`,
+tags:['basics','aws','ecs','sagemaker','deployment','fargate']},
+
+{cat:'basics',diff:'medium',q:'How do you deploy an AI service on Azure — ACI vs AKS vs Azure ML vs Azure OpenAI?',
+a:`<strong>General — Azure deployment options for AI workloads:</strong>
+
+<strong>Azure Container Instances (ACI):</strong>
+Simplest — run a Docker container directly, no cluster. Serverless, per-second billing. No scaling, no orchestration. Good for: one-off batch jobs, dev/test, simple single-container APIs. Not for production LLM services at scale.
+
+<strong>AKS (Azure Kubernetes Service):</strong>
+Managed Kubernetes on Azure — equivalent to GKE. Full K8s features, GPU node pools, auto-scaling. Best for: production AI microservices, complex multi-container apps, teams already using K8s.
+
+<strong>Azure Machine Learning (Azure ML):</strong>
+Full MLOps platform — managed training, model registry, managed endpoints for inference. Compute clusters for training (spin up GPUs on demand, pay per use). Online Endpoints (real-time) and Batch Endpoints. Best for: teams that want a complete ML platform without managing K8s directly. Similar to SageMaker in purpose.
+
+<strong>Azure OpenAI Service:</strong>
+Not "deploying your own model" — accessing OpenAI's GPT-4/o1/ada models deployed within Azure. No infrastructure. Per-token pricing with data residency guarantees.
+<code>from openai import AzureOpenAI
+client = AzureOpenAI(
+    azure_endpoint="https://YOUR-RESOURCE.openai.azure.com/",
+    api_key=os.getenv("AZURE_OPENAI_KEY"),
+    api_version="2024-02-01"
+)</code>
+
+<strong>My usage:</strong>
+The LRA system uses Azure OpenAI for GPT-4 and ada-002 — not self-hosted, accessed as a managed service. For a self-hosted deployment I would use AKS (same K8s skills from GKE, transferable). Azure ML would be the choice for training runs that needed managed GPU compute on Azure.`,
+tags:['basics','azure','aks','azure-ml','deployment','azure-openai']},
+
+{cat:'basics',diff:'medium',q:'What is Terraform — what did you manage with it and what is remote state?',
+a:`<strong>General — what Terraform is:</strong>
+Terraform is an Infrastructure-as-Code (IaC) tool by HashiCorp. You define cloud infrastructure in declarative HCL (HashiCorp Configuration Language) files — what resources you want. Terraform figures out what to create, modify, or destroy to reach that desired state.
+
+<strong>Core workflow:</strong>
+<code>terraform init    # download providers (AWS, GCP, Azure plugins)
+terraform plan    # show what will change (dry run)
+terraform apply   # create/update/destroy resources
+terraform destroy # tear everything down</code>
+
+<strong>Key concepts:</strong>
+• <strong>Provider:</strong> Plugin for a specific cloud (aws, google, azurerm)
+• <strong>Resource:</strong> A cloud object — <code>resource "google_container_cluster" "lra_gke" {...}</code>
+• <strong>Module:</strong> Reusable group of resources (e.g., a "gke-cluster" module)
+• <strong>State:</strong> Terraform tracks what it created in a state file — maps HCL definitions to real cloud resources
+
+<strong>Remote state:</strong>
+By default state is a local file (<code>terraform.tfstate</code>). Problem: in a team, multiple people running terraform → state file conflicts. Remote state stores it in a shared backend:
+<code>terraform {
+  backend "s3" {
+    bucket = "my-terraform-state"
+    key    = "prod/terraform.tfstate"
+    region = "us-east-1"
+  }
+}</code>
+S3 + DynamoDB locking = one person applies at a time, state is versioned and shared.
+
+<strong>In my work:</strong>
+I managed the GCP + AWS infrastructure for the AI deployment pipeline with Terraform: GKE cluster, node pools, GCP Artifact Registry, IAM service accounts, AWS ECS cluster, ECR repositories, security groups, ALB. I also migrated from Terraform Cloud to GitHub Actions S3 backend — triggered by Terraform Cloud pricing changes. GitHub Actions PR workflow ran <code>terraform plan</code> and posted the diff as a PR comment before any apply.`,
+tags:['basics','terraform','iac','devops','state']},
+
+{cat:'basics',diff:'easy',q:'What is Helm — what did you use it for?',
+a:`<strong>General — what Helm is:</strong>
+Helm is the package manager for Kubernetes — like apt/brew but for K8s applications. It templates Kubernetes YAML manifests so you can deploy the same application to different environments (dev/staging/prod) with different configurations, without duplicating YAML files.
+
+<strong>Core concepts:</strong>
+• <strong>Chart:</strong> A package — a directory of YAML templates + a <code>values.yaml</code> with defaults
+• <strong>Release:</strong> An installed instance of a chart in a cluster
+• <strong>Values:</strong> Configuration that overrides defaults per environment
+
+<code># Install/upgrade a release
+helm upgrade --install lra-api ./charts/lra-api \
+  --set image.tag=abc123 \
+  --set replicaCount=3 \
+  --set resources.limits.memory=2Gi \
+  -f values.prod.yaml
+
+# Rollback if something goes wrong
+helm rollback lra-api 1</code>
+
+<strong>Why Helm over plain kubectl apply:</strong>
+Without Helm you have separate Deployment/Service/Ingress/ConfigMap YAMLs for dev and prod with slightly different values — hard to maintain. Helm templates (<code>{{ .Values.image.tag }}</code>) let you inject values at deploy time. Also: <code>helm rollback</code> is instant — Helm tracks release history.
+
+<strong>In my CI/CD pipeline:</strong>
+GitHub Actions used Helm to deploy the LRA API to GKE. The pipeline passed the Git commit SHA as <code>--set image.tag=$SHA</code>. Different <code>values.yaml</code> files for staging (1 replica, smaller instance) and prod (3 replicas, larger instance). Helm rollback was available as a one-command recovery if a deploy caused issues.`,
+tags:['basics','helm','kubernetes','devops','deployment']},
+
+{cat:'basics',diff:'easy',q:'What is Trivy — why do you scan container images in CI?',
+a:`<strong>General — what Trivy is:</strong>
+Trivy is an open-source security scanner by Aqua Security. It scans Docker container images, filesystems, Git repositories, and K8s clusters for known vulnerabilities (CVEs — Common Vulnerabilities and Exposures) in OS packages and application dependencies.
+
+<strong>Why scan container images in CI:</strong>
+Your Docker image contains: a base OS (python:3.11-slim = Debian), system libraries, Python packages. Any of these can have known security vulnerabilities. Without scanning, you might deploy an image with a critical CVE (e.g., a known RCE vulnerability in a system library) to production — and not know it.
+
+<code># In GitHub Actions CI pipeline
+- name: Scan image for vulnerabilities
+  run: |
+    trivy image \
+      --exit-code 1 \           # fail the pipeline if vulnerabilities found
+      --severity HIGH,CRITICAL \ # only fail on serious CVEs
+      --ignore-unfixed \         # ignore CVEs with no fix available yet
+      gcr.io/PROJECT/lra-api:$SHA</code>
+
+<strong>What Trivy finds:</strong>
+• OS package vulnerabilities (apt packages in the base image)
+• Python package vulnerabilities (from requirements.txt)
+• Misconfigurations in Dockerfile (running as root, exposed secrets)
+
+<strong>In my pipeline:</strong>
+Trivy scan ran after Docker build and before pushing to GCP Artifact Registry. If HIGH or CRITICAL CVEs were found with available fixes, the pipeline failed — the fix was to upgrade the affected package in requirements.txt or switch to a newer base image. This prevented shipping known-vulnerable images to the GKE cluster. Unfixed CVEs were allowed (no patch available) but logged for tracking.`,
+tags:['basics','trivy','security','ci-cd','docker','devsecops']},
+
+// ── GROUP E: Tools & Libraries ────────────────────────────────────────────────
+
+{cat:'basics',diff:'easy',q:'What is FastAPI — why async, and how did you build streaming LLM endpoints?',
+a:`<strong>General — what FastAPI is:</strong>
+FastAPI is a modern Python web framework for building APIs. Built on Starlette (ASGI) and Pydantic. Key features: automatic OpenAPI/Swagger docs from type hints, Pydantic request validation, async-native, near-Go performance on IO-bound workloads.
+
+<strong>Why async for LLM services:</strong>
+LLM API calls are IO-bound — your Python code is waiting for the HTTP response from Azure OpenAI (can be 2–10 seconds). With a standard synchronous Flask endpoint, the entire thread is blocked for those 2–10 seconds. With async FastAPI, <code>await</code> releases the thread to handle other requests while waiting — 10× higher concurrency on the same hardware.
+
+<code>@app.post("/extract")
+async def extract_invoice(file: UploadFile):
+    ocr_text = await run_ocr(file)  # async file I/O
+    result = await llm.ainvoke(prompt)  # async LLM call, releases thread while waiting
+    return result</code>
+
+<strong>Streaming endpoints:</strong>
+<code>from fastapi.responses import StreamingResponse
+
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    async def token_generator():
+        async for chunk in llm.astream(request.prompt):
+            yield f"data: {chunk.content}\n\n"
+        yield "data: [DONE]\n\n"
+    return StreamingResponse(token_generator(), media_type="text/event-stream")</code>
+
+<strong>In my projects:</strong>
+The AR Email Agent exposed an async FastAPI endpoint that accepted email payloads (base64 encoded attachments), ran OCR + Llama-3 extraction asynchronously, and returned structured JSON. The LRA system had a streaming endpoint for the compliance report generation — tokens streamed to the frontend as GPT-4 generated them, giving instant feedback to users rather than a 30-second wait.`,
+tags:['basics','fastapi','async','streaming','api']},
+
+{cat:'basics',diff:'easy',q:'What is Redis — how did you use it in the AR Email Agent pipeline?',
+a:`<strong>General — what Redis is:</strong>
+Redis is an in-memory data structure store — used as a cache, message queue, session store, and rate limiter. Stores data in RAM → microsecond read/write latency. Persists to disk optionally. Data structures: strings, lists, sets, sorted sets, hashes, streams.
+
+<strong>Common use cases:</strong>
+• <strong>Cache:</strong> Store expensive computation results — avoid recomputing (e.g., embedding cache)
+• <strong>Queue:</strong> List-based task queue — producer pushes, consumer pops (LPUSH/BRPOP)
+• <strong>Pub/Sub:</strong> Message broadcast — one publisher, many subscribers
+• <strong>Rate limiting:</strong> Sliding window counters per API key
+• <strong>Session store:</strong> Store auth tokens / conversation state
+
+<strong>In my AR Email Agent:</strong>
+Redis served two purposes:
+
+<strong>1. Processing queue (deduplication):</strong>
+Microsoft Graph API email polling could return the same email multiple times if the previous run didn't mark it as read before a crash. Redis stored a Set of processed email IDs:
+<code>if redis_client.sismember("processed_emails", email_id):
+    continue  # already processed
+redis_client.sadd("processed_emails", email_id)
+redis_client.expire("processed_emails_" + email_id, 86400)  # 24hr TTL</code>
+
+<strong>2. Semantic cache for Llama-3 calls:</strong>
+Very similar invoice formats (same vendor, same template) generated nearly identical LLM extraction prompts. Redis cached the extraction result keyed by a hash of the OCR text — cache hit meant no Llama-3 API call. This reduced inference costs by ~25% on repeat vendor invoices.`,
+tags:['basics','redis','cache','queue','pipeline']},
+
+{cat:'basics',diff:'easy',q:'What are Pandas and NumPy — how do you actually use them in an LLM/AI pipeline?',
+a:`<strong>General — what they are:</strong>
+
+<strong>NumPy:</strong> Foundation of scientific computing in Python. Provides the N-dimensional array (<code>ndarray</code>) — a fast C-backed array with vectorised operations. All major ML libraries (PyTorch, scikit-learn, sentence-transformers) use NumPy arrays internally. Key for embeddings: dense vectors <em>are</em> NumPy arrays.
+
+<strong>Pandas:</strong> Built on NumPy. Provides DataFrames — labelled 2D tables with mixed types, built-in I/O (CSV, Parquet, Excel, SQL), groupby, merge, time-series handling. Essential for any data manipulation step before or after model inference.
+
+<strong>How they appear in an LLM pipeline specifically:</strong>
+
+<strong>NumPy for embeddings:</strong>
+<code>import numpy as np
+# Embeddings from API come as lists → convert to numpy for efficient ops
+embeddings = np.array(embedding_response.data[0].embedding)  # shape: (1536,)
+# Batch cosine similarity
+def cosine_sim(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+# Normalise for dot-product = cosine
+norms = np.linalg.norm(embeddings_matrix, axis=1, keepdims=True)
+normalised = embeddings_matrix / norms</code>
+
+<strong>Pandas for pipeline data management:</strong>
+<code># Track extraction results across 500 invoices
+results_df = pd.DataFrame(extraction_results)
+# Analyse accuracy by vendor
+accuracy_by_vendor = results_df.groupby('vendor')['field_accuracy'].mean()
+# Load evaluation dataset
+eval_df = pd.read_csv('golden_dataset.csv')
+# Export to Excel for stakeholder review
+results_df.to_excel('extraction_report.xlsx', index=False)</code>
+
+<strong>In my work:</strong>
+NumPy for embedding similarity computations and FAISS index operations in the NewsRAG system. Pandas for tracking invoice extraction accuracy across the test set, analysing which vendor formats had the lowest accuracy, and generating the evaluation report that showed the 72%→96% improvement story.`,
+tags:['basics','pandas','numpy','data','pipeline']},
+
+{cat:'basics',diff:'easy',q:'What is PyTorch — why is it the standard for LLM fine-tuning?',
+a:`<strong>General — what PyTorch is:</strong>
+PyTorch is an open-source deep learning framework by Meta. At its core: an N-dimensional tensor library with automatic differentiation (autograd). Tensors are like NumPy arrays but can run on GPU and track gradients for backpropagation.
+
+<strong>Key concepts:</strong>
+• <strong>Tensor:</strong> Multi-dimensional array — <code>torch.tensor([1.0, 2.0])</code>, moves to GPU with <code>.cuda()</code>
+• <strong>Autograd:</strong> Automatic gradient computation — call <code>loss.backward()</code>, PyTorch computes dL/dW for every parameter
+• <strong>nn.Module:</strong> Base class for all models — encapsulates parameters and forward pass
+• <strong>DataLoader:</strong> Batches and shuffles training data efficiently
+• <strong>Optimizer:</strong> AdamW, SGD — updates weights using computed gradients
+
+<strong>Why PyTorch dominates LLM fine-tuning:</strong>
+1. <strong>Dynamic computation graphs:</strong> Graph builds at runtime — easy to debug with Python print/pdb. TF1 had static graphs (define first, run later) — painful.
+2. <strong>All major open-source LLMs ship PyTorch weights:</strong> Llama-3, Mistral, Phi-3, Falcon — all HuggingFace checkpoints are PyTorch. No conversion step.
+3. <strong>PEFT / bitsandbytes ecosystem is PyTorch-native:</strong> LoRA, QLoRA, RLHF libraries all built on PyTorch.
+4. <strong>Research-friendly:</strong> 90%+ of ML papers implement in PyTorch — cutting-edge techniques available immediately.
+
+<strong>In my work:</strong>
+My QLoRA fine-tuning used PyTorch throughout: Llama-3 loaded as a PyTorch model via HuggingFace Transformers, LoRA adapters are PyTorch <code>nn.Linear</code> subclasses via PEFT, training loop managed by HuggingFace Trainer (which wraps PyTorch). I also used PyTorch for the custom evaluation loop — computing perplexity on the validation set to guide early stopping.`,
+tags:['basics','pytorch','deep-learning','fine-tuning','tensors']},
+
+{cat:'basics',diff:'easy',q:'What is deep learning — how does it differ from classical ML?',
+a:`<strong>General — the key distinction:</strong>
+
+<strong>Classical ML:</strong>
+• <strong>Feature engineering required:</strong> Humans extract meaningful features from raw data before the model sees it (e.g., for text: TF-IDF, word count, sentiment score → then logistic regression)
+• Models are shallow — one or two learned transformations
+• Needs less data, trains fast, interpretable
+• Good for: tabular data, small datasets, regulated domains needing explainability
+
+<strong>Deep Learning:</strong>
+• <strong>End-to-end feature learning:</strong> Stacked layers of neurons learn hierarchical representations directly from raw data — no manual feature engineering
+• "Deep" = many layers (transformers have 32–96+ layers)
+• Needs large datasets, needs GPU, less interpretable
+• Dominates: vision (CNNs), language (Transformers), audio (Wav2Vec)
+
+<strong>Why deep learning won for NLP:</strong>
+Before transformers, NLP used classical features (TF-IDF, n-grams, word2vec) fed into SVMs or LSTMs. The transformer architecture (2017, "Attention is All You Need") enabled learning richer representations by attending to all tokens simultaneously — leading to BERT (2018) and GPT (2018), which made manual NLP feature engineering largely obsolete.
+
+<strong>Neural network basics:</strong>
+Input → [Linear layer → Activation (ReLU/GELU)] × N layers → Output. Each layer learns a transformation of the previous layer's representation. Gradients flow back through all layers during backpropagation — each layer updates its weights to reduce loss.
+
+<strong>In my work:</strong>
+All my LLM work (GPT-4, Llama-3, ada-002 embeddings) is deep learning — transformer neural networks with billions of parameters. The embedding model (BERT-class encoder) is also deep learning. scikit-learn (classical ML) appears only as a supporting tool — routing classifiers, evaluation metrics.`,
+tags:['basics','deep-learning','ml','neural-networks','fundamentals']},
+
+{cat:'basics',diff:'medium',q:'What is hyperparameter tuning — what parameters matter for LLM fine-tuning specifically?',
+a:`<strong>General — what hyperparameter tuning is:</strong>
+Hyperparameters are configuration values set before training that control the learning process — as opposed to model parameters (weights) which are learned during training. Tuning means finding the combination that produces the best model.
+
+<strong>Tuning methods:</strong>
+• <strong>Grid search:</strong> Try every combination of specified values. Exhaustive, expensive for many parameters.
+• <strong>Random search:</strong> Sample random combinations — more efficient than grid when parameter space is large.
+• <strong>Bayesian optimisation:</strong> Use previous results to intelligently select next combination to try (Optuna, Ray Tune). Best for expensive training runs.
+• <strong>Manual/iterative:</strong> Domain knowledge + trial and error — most common in practice for LLM fine-tuning.
+
+<strong>Key hyperparameters for LLM fine-tuning:</strong>
+
+| Parameter | Typical range | Effect |
+|---|---|---|
+| Learning rate | 1e-5 to 3e-4 | Too high = unstable training, too low = slow convergence |
+| Batch size | 4–32 | Larger = more stable gradients, needs more VRAM |
+| Warmup steps | 50–500 | Gradually increase LR from 0 — prevents early instability |
+| LoRA r | 4, 8, 16, 32 | Higher = more trainable params = better fit, more VRAM |
+| LoRA alpha | 2×r typically | Scaling — usually fixed relative to r |
+| Epochs | 1–10 (with early stopping) | Fine-tuning needs few epochs — base model already capable |
+| Weight decay | 0.01–0.1 | L2 regularisation — prevents forgetting pre-trained knowledge |
+
+<strong>In my fine-tuning project:</strong>
+I tuned learning rate (tried 1e-4, 3e-5, 1e-5 — settled on 2e-4 with cosine schedule), batch size (4 on single A100 with gradient accumulation steps=8 to simulate effective batch of 32), and LoRA r (tried 8 and 16 — r=16 gave meaningfully better domain vocabulary). I used manual iterative tuning rather than automated search — at 6 hours per run, automated search was too expensive. Early stopping on validation loss guided the number of epochs.`,
+tags:['basics','hyperparameter-tuning','fine-tuning','training','lora']},
+
+// ── GROUP F: AI Tools ─────────────────────────────────────────────────────────
+
+{cat:'basics',diff:'easy',q:'What is GitHub Copilot — how do you use it day-to-day as a GenAI engineer?',
+a:`<strong>General — what GitHub Copilot is:</strong>
+GitHub Copilot is an AI pair programmer built on OpenAI Codex / GPT-4. It integrates directly into VS Code, JetBrains, and other IDEs — reads your current file and surrounding context, suggests code completions inline (single lines or whole functions), and can generate code from natural language comments.
+
+<strong>Core features:</strong>
+• <strong>Inline completions:</strong> As you type, Copilot suggests the next line or block — accept with Tab
+• <strong>Copilot Chat:</strong> Chat panel in VS Code — ask questions about your codebase, get explanations, ask it to refactor selected code
+• <strong>Slash commands:</strong> <code>/explain</code> (explain selected code), <code>/fix</code> (fix a bug), <code>/test</code> (generate unit tests), <code>/doc</code> (write docstrings)
+• <strong>Workspace context:</strong> Copilot Chat can reference your entire codebase with <code>@workspace</code>
+
+<strong>How GenAI engineers specifically use it:</strong>
+• Generate boilerplate LangChain chain setups — Copilot knows the API patterns
+• Write Pydantic models from a JSON example pasted as a comment
+• Generate pytest fixtures for LLM pipeline tests (mocked OpenAI responses)
+• Explain complex library code (LangGraph source, HuggingFace Trainer internals)
+• Write Terraform resource blocks from a comment describing what you need
+• Autocomplete repetitive patterns: Dockerfile stages, GitHub Actions YAML steps
+
+<strong>Limitations to be aware of:</strong>
+• Suggestions can be confident and wrong — always review, especially for security-sensitive code
+• Training data cutoff — may suggest deprecated API patterns (LangChain v0.1 vs v0.3 changed significantly)
+• Not a replacement for understanding — if you can't review the suggestion intelligently, the speed gain is a risk
+
+<strong>In my daily work:</strong>
+I use Copilot for accelerating boilerplate (FastAPI endpoint stubs, Pydantic model generation, Dockerfile patterns) and Copilot Chat for quick documentation lookups and explaining LangGraph source code behaviour.`,
+tags:['basics','github-copilot','ai-tools','developer-tools']},
+
+{cat:'basics',diff:'medium',q:'What is GitHub Copilot Studio — how do you build custom copilots with it?',
+a:`<strong>General — what Copilot Studio is:</strong>
+Microsoft Copilot Studio (formerly Power Virtual Agents) is a low-code platform for building custom AI assistants ("copilots") that can be embedded in Microsoft Teams, websites, SharePoint, or other channels. It's part of the Microsoft Power Platform ecosystem.
+
+<strong>Key distinction from GitHub Copilot:</strong>
+GitHub Copilot = AI coding assistant inside IDEs.
+Copilot Studio = build-your-own AI chatbot/assistant for end users, no coding required for basic bots.
+
+<strong>What Copilot Studio provides:</strong>
+• <strong>Topics:</strong> Conversational flows — trigger phrases → structured dialogue → actions
+• <strong>Generative AI answers:</strong> Connect to a knowledge source (SharePoint, uploaded docs, public websites) → the copilot uses Azure OpenAI to answer questions from that source (essentially a managed RAG)
+• <strong>Actions:</strong> Connect to Power Automate flows or HTTP connectors — trigger workflows (create a ticket, look up an order)
+• <strong>Channels:</strong> Deploy to Teams, web chat, Slack, email with one click
+• <strong>Authentication:</strong> Azure AD SSO out of the box
+
+<strong>How to build a basic custom copilot in Copilot Studio:</strong>
+1. Create a new copilot → configure name, language, icon
+2. Add a knowledge source (SharePoint site or uploaded documents)
+3. Enable "Generative answers" — copilot will RAG over your knowledge source
+4. Create Topics for specific intents that need structured dialogue (e.g., "Book a meeting room")
+5. Connect Actions to Power Automate for backend operations
+6. Publish to Teams channel
+
+<strong>Relevance to your work:</strong>
+Copilot Studio is the low-code path to what you built in code with LangChain + LangGraph. Your LRA system is effectively a custom copilot for compliance validation — you built it in Python for full control. Copilot Studio would be the choice for a non-technical team that wants a SharePoint Q&A bot quickly without engineering resources. "Power Apps (for Quick POC)" on your resume signals familiarity with this Power Platform ecosystem.`,
+tags:['basics','copilot-studio','microsoft','low-code','chatbot']},
+
+{cat:'basics',diff:'medium',q:'What is Amazon SageMaker in depth — training jobs, endpoints, pipelines, and when to use it over Bedrock?',
+a:`<strong>General — SageMaker as a complete MLOps platform:</strong>
+SageMaker is AWS's end-to-end ML platform. Not just model serving — it covers the entire lifecycle from data prep through training, evaluation, versioning, and deployment.
+
+<strong>Core components in depth:</strong>
+
+<strong>Training Jobs:</strong>
+Managed distributed training on any AWS compute (GPU instances, Spot, multi-node).
+<code>from sagemaker.huggingface import HuggingFace
+estimator = HuggingFace(
+    entry_point="train.py",         # your training script
+    instance_type="ml.g5.2xlarge",  # single A10G GPU
+    instance_count=1,
+    transformers_version="4.36",
+    pytorch_version="2.1",
+    hyperparameters={"r": 16, "lr": "2e-4", "epochs": 5}
+)
+estimator.fit({"train": "s3://bucket/train-data/"})</code>
+SageMaker handles: spot instance interruption recovery, output to S3, CloudWatch logs.
+
+<strong>Model Registry:</strong>
+Version + stage models (Staging → Production). Approval workflow before production deploy.
+
+<strong>Real-time Endpoints:</strong>
+Deploy a model as an auto-scaling REST endpoint:
+<code>predictor = estimator.deploy(
+    initial_instance_count=1,
+    instance_type="ml.g5.xlarge",
+    endpoint_name="lra-extractor"
+)
+response = predictor.predict({"inputs": ocr_text})</code>
+
+<strong>Batch Transform:</strong> Run inference on S3 files in bulk — no persistent endpoint, pay per job.
+
+<strong>Pipelines:</strong> Orchestrate data → preprocess → train → evaluate → register → deploy as a DAG.
+
+<strong>SageMaker vs Bedrock decision matrix:</strong>
+| | SageMaker | Bedrock |
+|---|---|---|
+| Custom model | ✓ (your trained weights) | ✗ (only pre-built FMs) |
+| Fine-tuning control | Full (QLoRA, SFT, DPO) | Limited (managed fine-tuning) |
+| Infrastructure | You size instances | Fully managed |
+| Cost model | Per-hour instance | Per-token |
+| Open-source models | ✓ (Llama, Mistral via Jumpstart) | ✓ (subset) |
+
+<strong>When to choose SageMaker for your work:</strong>
+Run QLoRA fine-tuning at scale (managed spot GPU), deploy the fine-tuned Llama-3 as a real-time endpoint, build a training → evaluation → deploy pipeline. All tasks where Bedrock's managed FMs aren't enough because you're bringing your own model.`,
+tags:['basics','sagemaker','aws','mlops','training','deployment']},
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 {cat:'fundamentals',diff:'easy',q:'What is the difference between generative and discriminative models?',
 a:'Discriminative models learn the decision boundary between classes — given input X, predict label Y (logistic regression, SVM, BERT for classification). Generative models learn the underlying data distribution P(X) — how was this data generated? They can sample new examples from that distribution (VAEs, GANs, GPT).<br><br><strong>Key practical frame:</strong> In my pipelines I use both — a discriminative embedding model (BERT-class) for retrieval and a generative LLM (GPT-4) for synthesis. The two work together: discriminative models find; generative models explain.',
 followup:'Give a concrete example of each type from your actual project work.',
